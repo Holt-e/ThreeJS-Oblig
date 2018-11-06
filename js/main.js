@@ -3,13 +3,16 @@ import {
     WebGLRenderer,
     Scene,
     BoxBufferGeometry,
+    Mesh,
     MeshBasicMaterial,
-    Mesh
+    TextureLoader,
+    RepeatWrapping
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
 import MouseLookController from './controls/MouseLookController.js';
 
+import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 
 const scene = new Scene();
@@ -58,14 +61,37 @@ camera.position.y = 15;
  */
 Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
 
+    const width = 100;
+
     const terrainGeometry = new TerrainBufferGeometry({
+        width,
         heightmapImage,
         numberOfSubdivisions: 128
     });
 
-    const terrainMaterial = new MeshBasicMaterial({
+    // const terrainMaterial = new MeshBasicMaterial({
+    //     color: 0x777777,
+    //     wireframe: true
+    // });
+
+    const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
+    grassTexture.wrapS = RepeatWrapping;
+    grassTexture.wrapT = RepeatWrapping;
+    grassTexture.repeat.set(width/80, width/80);
+
+    const snowyRockTexture = new TextureLoader().load('resources/textures/snowy_rock_01.png');
+    snowyRockTexture.wrapS = RepeatWrapping;
+    snowyRockTexture.wrapT = RepeatWrapping;
+    snowyRockTexture.repeat.set(width/300, width/300);
+
+
+    const splatMap = new TextureLoader().load('resources/images/splatmap_01.png');
+
+    const terrainMaterial = new TextureSplattingMaterial({
         color: 0x777777,
-        wireframe: true
+        shininess: 0,
+        textures: [grassTexture, snowyRockTexture],
+        splatMaps: [splatMap]
     });
 
     const terrain = new Mesh(terrainGeometry, terrainMaterial);
