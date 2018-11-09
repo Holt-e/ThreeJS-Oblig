@@ -6,8 +6,11 @@ import {
     Mesh,
     MeshBasicMaterial,
     TextureLoader,
-    RepeatWrapping
+    RepeatWrapping,
+    PointLight
 } from './lib/three.module.js';
+
+import OBJLoader from './loaders/OBJLoader.js';
 
 import Utilities from './lib/Utilities.js';
 import MouseLookController from './controls/MouseLookController.js';
@@ -69,30 +72,30 @@ Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
         numberOfSubdivisions: 128
     });
 
-    // const terrainMaterial = new MeshBasicMaterial({
-    //     color: 0x777777,
-    //     wireframe: true
-    // });
-
-    const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
-    grassTexture.wrapS = RepeatWrapping;
-    grassTexture.wrapT = RepeatWrapping;
-    grassTexture.repeat.set(width/80, width/80);
-
-    const snowyRockTexture = new TextureLoader().load('resources/textures/snowy_rock_01.png');
-    snowyRockTexture.wrapS = RepeatWrapping;
-    snowyRockTexture.wrapT = RepeatWrapping;
-    snowyRockTexture.repeat.set(width/300, width/300);
-
-
-    const splatMap = new TextureLoader().load('resources/images/splatmap_01.png');
-
-    const terrainMaterial = new TextureSplattingMaterial({
+    const terrainMaterial = new MeshBasicMaterial({
         color: 0x777777,
-        shininess: 0,
-        textures: [grassTexture, snowyRockTexture],
-        splatMaps: [splatMap]
+        wireframe: true
     });
+
+    // const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
+    // grassTexture.wrapS = RepeatWrapping;
+    // grassTexture.wrapT = RepeatWrapping;
+    // grassTexture.repeat.set(width/80, width/80);
+
+    // const snowyRockTexture = new TextureLoader().load('resources/textures/snowy_rock_01.png');
+    // snowyRockTexture.wrapS = RepeatWrapping;
+    // snowyRockTexture.wrapT = RepeatWrapping;
+    // snowyRockTexture.repeat.set(width/300, width/300);
+
+
+    // const splatMap = new TextureLoader().load('resources/images/splatmap_01.png');
+
+    // const terrainMaterial = new TextureSplattingMaterial({
+    //     color: 0x777777,
+    //     shininess: 0,
+    //     textures: [grassTexture, snowyRockTexture],
+    //     splatMaps: [splatMap]
+    // });
 
     const terrain = new Mesh(terrainGeometry, terrainMaterial);
 
@@ -136,6 +139,38 @@ document.addEventListener('pointerlockchange', () => {
  * Hint: You can use camera.getWorldDirection(target),
  * to get a vec3 representing the direction the camera is pointing.
  */
+
+const light = new PointLight();
+
+light.position.z = 3;
+light.position.y = 3;
+
+scene.add(light);
+
+// instantiate a loader
+const loader = new OBJLoader();
+
+// load a resource
+loader.load(
+    // resource URL
+    'resources/models/sofa.obj',
+    // called when resource is loaded
+    function (object) {
+        scene.add(object);
+    },
+    // called when loading is in progresses
+    function (xhr) {
+
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+
+    },
+    // called when loading has errors
+    function (error) {
+
+        console.log('An error happened');
+
+    }
+);
 
 
 function loop() {
