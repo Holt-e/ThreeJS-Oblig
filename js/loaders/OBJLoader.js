@@ -1,3 +1,8 @@
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+/** Modified for use with ES6 modules, Oskar Elias Bråten */
 
 import {
     DefaultLoadingManager,
