@@ -1,15 +1,17 @@
 import {
-    PerspectiveCamera,
-    WebGLRenderer,
-    PCFSoftShadowMap,
-    Scene,
     BoxBufferGeometry,
     Mesh,
-    TextureLoader,
-    RepeatWrapping,
-    DirectionalLight,
     MeshPhongMaterial,
-    Vector3
+    ObjectSpaceNormalMap,
+    PCFSoftShadowMap,
+    PerspectiveCamera,
+    PlaneGeometry,
+    PointLight,
+    RepeatWrapping,
+    Scene,
+    TextureLoader,
+    Vector3,
+    WebGLRenderer
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -18,6 +20,7 @@ import MouseLookController from './controls/MouseLookController.js';
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 
+const textureLoader = new TextureLoader();
 const scene = new Scene();
 
 const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -47,18 +50,18 @@ window.addEventListener('resize', () => {
  */
 document.body.appendChild(renderer.domElement);
 
-const directionalLight = new DirectionalLight(0xffffff);
-directionalLight.position.set(30, 40, 0);
+const pointLight = new PointLight(0xffffff);
+pointLight.position.y = 30;
 
-directionalLight.castShadow = true;
+pointLight.castShadow = true;
 
 //Set up shadow properties for the light
-directionalLight.shadow.mapSize.width = 512;  // default
-directionalLight.shadow.mapSize.height = 512; // default
-directionalLight.shadow.camera.near = 0.5;    // default
-directionalLight.shadow.camera.far = 500;     // default
+pointLight.shadow.mapSize.width = 512;  // default
+pointLight.shadow.mapSize.height = 512; // default
+pointLight.shadow.camera.near = 0.5;    // default
+pointLight.shadow.camera.far = 500;     // default
 
-scene.add(directionalLight);
+scene.add(pointLight);
 
 
 const geometry = new BoxBufferGeometry(1, 1, 1);
@@ -67,8 +70,6 @@ const cube = new Mesh(geometry, material);
 
 cube.castShadow = true;
 cube.position.set(0, 15, 0);
-
-directionalLight.target = cube;
 
 scene.add(cube);
 
@@ -130,6 +131,30 @@ Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
     scene.add(terrain);
 
 });
+
+let oceanDisplacementMap = textureLoader.load('resources/images/OceanMap.png');
+oceanDisplacementMap.wrapS = RepeatWrapping;
+oceanDisplacementMap.wrapT = RepeatWrapping;
+oceanDisplacementMap.repeat.set(1000 / 100, 1000 / 100);
+
+
+const waterGeometry = new PlaneGeometry(100, 100, 1024, 1024);
+const waterMaterial = new MeshPhongMaterial({
+    color: 0x0000ff,
+    shininess: 100,
+    displacementMap: oceanDisplacementMap,
+    displacementScale: 1,
+    normalMap: oceanDisplacementMap,
+    normalMapType: ObjectSpaceNormalMap
+});
+
+const water = new Mesh(waterGeometry, waterMaterial);
+water.position.y = 3;
+water.rotation.x = -Math.PI / 2;
+water.castShadow = true;
+water.receiveShadow = true;
+
+scene.add(water);
 
 /**
  * Set up camera controller:
