@@ -1,6 +1,7 @@
 import {
     BoxBufferGeometry,
     CubeTextureLoader,
+    Fog,
     Mesh,
     MeshPhongMaterial,
     MeshStandardMaterial,
@@ -178,6 +179,13 @@ water.castShadow = true;
 water.receiveShadow = true;
 
 scene.add(water);
+
+//// FOG ////
+
+const color = 0x6c7c8a;  // white
+const near = 30;
+const far = 60;
+scene.fog = new Fog(color, near, far);
 
 /**
  * Set up camera controller:
