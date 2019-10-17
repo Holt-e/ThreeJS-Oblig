@@ -1,8 +1,9 @@
 import {
     BoxBufferGeometry,
+    CubeTextureLoader,
     Mesh,
     MeshPhongMaterial,
-    ObjectSpaceNormalMap,
+    MeshStandardMaterial,
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneGeometry,
@@ -86,6 +87,8 @@ camera.position.y = 25;
  * An alternative way to handle asynchronous functions is async/await
  *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
  */
+
+//// Terrain ////
 Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
 
     const width = 100;
@@ -93,15 +96,8 @@ Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
     const terrainGeometry = new TerrainBufferGeometry({
         width,
         heightmapImage,
-        numberOfSubdivisions: 128,
-        heihgt: 40
+        numberOfSubdivisions: 128
     });
-
-    // const terrainMaterial = new MeshPhongMaterial({
-    //     color: 0x777777
-    // });
-
-
 
     const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
     grassTexture.wrapS = RepeatWrapping;
@@ -132,20 +128,33 @@ Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
 
 });
 
-let oceanDisplacementMap = textureLoader.load('resources/images/OceanMap.png');
+//// ENV MAP ////
+
+const loader = new CubeTextureLoader();
+const environmentMap = loader.load([
+    'resources/images/skybox/miramar_ft.jpg',
+    'resources/images/skybox/miramar_bk.jpg',
+    'resources/images/skybox/miramar_up.jpg',
+    'resources/images/skybox/miramar_dn.jpg',
+    'resources/images/skybox/miramar_rt.jpg',
+    'resources/images/skybox/miramar_lf.jpg',
+]);
+scene.background = environmentMap;
+
+//// WATER ////
+
+let oceanDisplacementMap = textureLoader.load('resources/images/0001.png');
 oceanDisplacementMap.wrapS = RepeatWrapping;
 oceanDisplacementMap.wrapT = RepeatWrapping;
-oceanDisplacementMap.repeat.set(1000 / 100, 1000 / 100);
+oceanDisplacementMap.repeat.set(2, 2);
 
 
-const waterGeometry = new PlaneGeometry(100, 100, 1024, 1024);
-const waterMaterial = new MeshPhongMaterial({
-    color: 0x0000ff,
-    shininess: 100,
+const waterGeometry = new PlaneGeometry(100, 100, 64, 64);
+
+let waterMaterial = new MeshStandardMaterial({
     displacementMap: oceanDisplacementMap,
-    displacementScale: 1,
     normalMap: oceanDisplacementMap,
-    normalMapType: ObjectSpaceNormalMap
+    envMap: environmentMap
 });
 
 const water = new Mesh(waterGeometry, waterMaterial);
@@ -253,6 +262,7 @@ window.addEventListener('keyup', (e) => {
 // );
 
 const velocity = new Vector3(0.0, 0.0, 0.0);
+
 
 let then = performance.now();
 function loop(now) {
