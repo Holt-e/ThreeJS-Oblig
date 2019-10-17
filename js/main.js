@@ -11,6 +11,7 @@ import {
     RepeatWrapping,
     Scene,
     TextureLoader,
+    Vector2,
     Vector3,
     WebGLRenderer
 } from './lib/three.module.js';
@@ -26,12 +27,6 @@ const scene = new Scene();
 
 const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const renderer = new WebGLRenderer();
-renderer.setClearColor(0xffffff);
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = PCFSoftShadowMap;
 
 /**
  * Handle window resize:
@@ -49,16 +44,23 @@ window.addEventListener('resize', () => {
 /**
  * Add canvas element to DOM.
  */
-document.body.appendChild(renderer.domElement);
+let canvas = document.createElement('canvas');
+let context = canvas.getContext('webgl2', {alpha: false});
+const renderer = new WebGLRenderer({canvas: canvas, context: context});
+renderer.setClearColor(0xffffff);
+renderer.setSize(window.innerWidth, window.innerHeight);
 
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
 const pointLight = new PointLight(0xffffff);
 pointLight.position.y = 30;
 
 pointLight.castShadow = true;
 
 //Set up shadow properties for the light
-pointLight.shadow.mapSize.width = 512;  // default
-pointLight.shadow.mapSize.height = 512; // default
+pointLight.shadow.mapSize.width = 1024;  // default
+pointLight.shadow.mapSize.height = 1024; // default
 pointLight.shadow.camera.near = 0.5;    // default
 pointLight.shadow.camera.far = 500;     // default
 
@@ -96,7 +98,8 @@ Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
     const terrainGeometry = new TerrainBufferGeometry({
         width,
         heightmapImage,
-        numberOfSubdivisions: 128
+        numberOfSubdivisions: 128,
+        height: 10
     });
 
     const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
@@ -143,15 +146,26 @@ scene.background = environmentMap;
 
 //// WATER ////
 
+let oceanOffset = new Vector2(0.01, 0.001);
+//Loading textures
 let oceanDisplacementMap = textureLoader.load('resources/images/0001.png');
 oceanDisplacementMap.wrapS = RepeatWrapping;
 oceanDisplacementMap.wrapT = RepeatWrapping;
 oceanDisplacementMap.repeat.set(2, 2);
+oceanDisplacementMap.offset = oceanOffset;
+
+let oceanAlphaMap = textureLoader.load('resources/images/alphaMap.png');
+oceanAlphaMap.wrapS = RepeatWrapping;
+oceanAlphaMap.wrapT = RepeatWrapping;
 
 
 const waterGeometry = new PlaneGeometry(100, 100, 64, 64);
 
 let waterMaterial = new MeshStandardMaterial({
+    transparent: true,
+    opacity: 0.8,
+    color: 0x014599,
+    metalness: 0.0,
     displacementMap: oceanDisplacementMap,
     normalMap: oceanDisplacementMap,
     envMap: environmentMap
@@ -173,7 +187,6 @@ const mouseLookController = new MouseLookController(camera);
 
 // We attach a click lister to the canvas-element so that we can request a pointer lock.
 // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API
-const canvas = renderer.domElement;
 
 canvas.addEventListener('click', () => {
     canvas.requestPointerLock();
@@ -266,6 +279,9 @@ const velocity = new Vector3(0.0, 0.0, 0.0);
 
 let then = performance.now();
 function loop(now) {
+
+    oceanOffset.x += 0.001;
+    oceanOffset.y += 0.001;
 
     const delta = now - then;
     then = now;
