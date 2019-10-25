@@ -14,6 +14,7 @@ import {
     Scene,
     Texture,
     TextureLoader,
+    UVMapping,
     Vector2,
     Vector3,
     WebGLRenderer
@@ -171,11 +172,11 @@ async function main() {
     let oceanDisplacementMap = [];
 
     for (let i = 0; i < 120; i++) {
-        oceanDisplacementMap.push(new Texture(waterDisplacementMap[4], RepeatWrapping, RepeatWrapping));
+        oceanDisplacementMap.push(new Texture(waterDisplacementMap[i], UVMapping, RepeatWrapping, RepeatWrapping));
         oceanDisplacementMap[i].repeat.set(2, 2);
+        oceanDisplacementMap[i].needsUpdate = true;
 
     }
-    console.log(oceanDisplacementMap[0])
 
     let waterMaterial = new MeshStandardMaterial({
         transparent: true,
@@ -190,6 +191,7 @@ async function main() {
     });
 
     let waterImageNumber = 0;
+    let waterFrameBool = 0;
 
 
     const water = new Mesh(waterGeometry, waterMaterial);
@@ -306,14 +308,33 @@ async function main() {
 
     let then = performance.now();
 
+    let frameNumber = 0.0;
     function loop(now) {
-        waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
-        waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
+        frameNumber += 0.05;
+        waterFrameBool++;
+
+        oceanOffset.x += 0.001 * Math.sin(frameNumber);
+        oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
+
+        if (waterFrameBool === 1) {
+            waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
+            waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
+            waterFrameBool = 0;
+        }
+
+        waterMaterial.displacementMap.needsUpdate = true;
+        waterMaterial.displacementMap.offset = oceanOffset;
+
+        waterMaterial.normalMap.needsUpdate = true;
+        waterMaterial.normalMap.offset = oceanOffset;
+
 
         waterImageNumber++;
-        if (waterImageNumber > 120) {
+        if (waterImageNumber > 119) {
             waterImageNumber = 0;
         }
+
+
         const delta = now - then;
         then = now;
 
