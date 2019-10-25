@@ -109,6 +109,18 @@ async function main() {
             height: 20
         });
 
+        //*********Grass Instance ********** DOES NOT WORK YET
+        var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
+        var ObjGrass = new MeshBasicMaterial({
+            transparent: true,
+            map: grassInstance
+        });
+        ObjGrass.depthTest = false;
+        ObjGrass.side = DoubleSide;
+        var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
+        objtree.name = "Billboard";
+        objtree.receiveShadow = true;
+
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
         grassTexture.wrapT = RepeatWrapping;
