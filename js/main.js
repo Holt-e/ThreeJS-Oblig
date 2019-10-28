@@ -10,6 +10,7 @@ import {
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneGeometry,
+    AmbientLight,
     RepeatWrapping,
     Scene,
     Texture,
@@ -17,7 +18,11 @@ import {
     UVMapping,
     Vector2,
     Vector3,
-    WebGLRenderer
+    WebGLRenderer,
+    MeshLambertMaterial,
+    MeshBasicMaterial,
+    PlaneBufferGeometry
+
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -110,16 +115,16 @@ async function main() {
         });
 
         //*********Grass Instance ********** DOES NOT WORK YET
-        var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
-        var ObjGrass = new MeshBasicMaterial({
-            transparent: true,
-            map: grassInstance
-        });
-        ObjGrass.depthTest = false;
-        ObjGrass.side = DoubleSide;
-        var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
-        objtree.name = "Billboard";
-        objtree.receiveShadow = true;
+        //var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
+        //var ObjGrass = new MeshBasicMaterial({
+        //    transparent: true,
+        //    map: grassInstance
+        //});
+        //ObjGrass.depthTest = false;
+        //ObjGrass.side = DoubleSide;
+        //var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
+        //objtree.name = "Billboard";
+        //objtree.receiveShadow = true;
 
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
@@ -213,6 +218,41 @@ async function main() {
     water.receiveShadow = true;
 
     scene.add(water);
+
+    //************Rain**********
+
+//************Clouds**********
+
+    let cloudParticles = [];
+    let cloudLoader = new TextureLoader();
+    cloudLoader.load(`resources/images/smoke1.png`,function (texture) {
+
+
+        let cloudGeo = new PlaneBufferGeometry(600,600);
+        let cloudMaterial = new MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            reflectivity: 1,
+            color: 	0x686868,
+        });
+        for(let p=0; p<50; p++) {
+            let cloud = new Mesh(cloudGeo,cloudMaterial);
+            cloud.position.set(
+                Math.random()*800 -400,
+                500,
+                Math.random()*500 - 450
+            );
+            cloud.rotation.x = 1.16;
+            cloud.rotation.y = -0.12;
+            cloud.rotation.z = Math.random()*360;
+            cloud.material.opacity = 0.9;
+            cloudParticles.push(cloud);
+            scene.add(cloud);
+        }
+        loop();
+    });
+
+    //***********Rain*********
 
 //// FOG ////
 
@@ -379,6 +419,11 @@ async function main() {
 
         velocity.applyQuaternion(camera.quaternion);
         camera.position.add(velocity);
+
+        //animate rain
+        cloudParticles.forEach(p=> {
+            p.rotation.z -=0.002;
+        });
 
 
         // animate cube rotation:
