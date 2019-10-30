@@ -1,39 +1,38 @@
 import {
     BoxBufferGeometry,
     CubeTextureLoader,
-    DataTextureLoader,
     DirectionalLight,
     Fog,
     Mesh,
+    MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
     PCFSoftShadowMap,
     PerspectiveCamera,
+    PlaneBufferGeometry,
     PlaneGeometry,
-    AmbientLight,
     RepeatWrapping,
     Scene,
     Texture,
     TextureLoader,
     UVMapping,
     Vector2,
-    Vector3,
-    WebGLRenderer,
-    MeshLambertMaterial,
-    MeshBasicMaterial,
-    PlaneBufferGeometry
-
+    WebGLRenderer
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
+import PhysicsEngine from './lib/PhysicsEngine.js';
+import PhysicsObject from './lib/PhysicsObject.js';
 import MouseLookController from './controls/MouseLookController.js';
 
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 
-async function main() {
+let terrainGeometry;
+let physicsEngine;
+
+async function main(array, offset) {
     const textureLoader = new TextureLoader();
-    const dataTextureLoader = new DataTextureLoader();
     const scene = new Scene();
 
     const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -77,20 +76,23 @@ async function main() {
 
     scene.add(pointLight);
 
+    let physicsObjects = [];
 
     const geometry = new BoxBufferGeometry(1, 1, 1);
     const material = new MeshPhongMaterial({color: 0x00ff00});
-    const cube = new Mesh(geometry, material);
+    const cube = new PhysicsObject(geometry, material);
+
+    physicsObjects.push(cube);
 
     cube.castShadow = true;
     cube.position.set(0, 15, 0);
 
     scene.add(cube);
+    cube.add(camera);
 
     pointLight.target = cube;
-    camera.position.z = 10;
-    camera.position.y = 25;
-
+    camera.position.z = 5;
+    camera.position.y = 5;
 
     /**
      * Add terrain:
@@ -103,29 +105,29 @@ async function main() {
      */
 
 //// Terrain ////
-    Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
+    Utilities.loadImage('resources/images/genHeight.png').then((heightmapImage) => {
 
         const width = 100;
 
-        const terrainGeometry = new TerrainBufferGeometry({
+        terrainGeometry = new TerrainBufferGeometry({
             width,
             heightmapImage,
-            numberOfSubdivisions: 128,
-            height: 20
+            numberOfSubdivisions: 1024,
+            height: 30
         });
-
-        //*********Grass Instance ********** DOES NOT WORK YET
-        //var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
-        //var ObjGrass = new MeshBasicMaterial({
-        //    transparent: true,
-        //    map: grassInstance
-        //});
-        //ObjGrass.depthTest = false;
-        //ObjGrass.side = DoubleSide;
-        //var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
-        //objtree.name = "Billboard";
-        //objtree.receiveShadow = true;
-
+        /*
+                //*********Grass Instance ********** DOES NOT WORK YET
+                var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
+                var ObjGrass = new MeshBasicMaterial({
+                    transparent: true,
+                    map: grassInstance
+                });
+                ObjGrass.depthTest = false;
+                ObjGrass.side = DoubleSide;
+                var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
+                objtree.name = "Billboard";
+                objtree.receiveShadow = true;
+        */
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
         grassTexture.wrapT = RepeatWrapping;
@@ -153,12 +155,13 @@ async function main() {
 
         scene.add(terrain);
 
+        physicsEngine = new PhysicsEngine(physicsObjects, terrainGeometry);
     });
 
 //// ENV MAP ////
 
-    const loader = new CubeTextureLoader();
-    const environmentMap = loader.load([
+    const cubeTextureLoader = new CubeTextureLoader();
+    const environmentMap = cubeTextureLoader.load([
         'resources/images/skybox/miramar_ft.png',
         'resources/images/skybox/miramar_bk.png',
         'resources/images/skybox/miramar_up.png',
@@ -190,19 +193,23 @@ async function main() {
 
     for (let i = 0; i < 120; i++) {
         oceanDisplacementMap.push(new Texture(waterDisplacementMap[i], UVMapping, RepeatWrapping, RepeatWrapping));
-        oceanDisplacementMap[i].repeat.set(2, 2);
+        oceanDisplacementMap[i].repeat.set(10, 10);
         oceanDisplacementMap[i].needsUpdate = true;
 
     }
 
+    let texLoadOcaen = textureLoader.load('resources/textures/waterAnimated/0001.png');
     let waterMaterial = new MeshStandardMaterial({
         transparent: true,
         opacity: 0.6,
         color: 0x7399c7,
         metalness: 0.3,
+        refractionRatio: 0.75,
+
         roughness: 0.1,
         envMapIntensity: 1.5,
         displacementMap: oceanDisplacementMap[0],
+        displacementScale: 1,
         normalMap: oceanDisplacementMap[0],
         envMap: environmentMap
     });
@@ -212,7 +219,7 @@ async function main() {
 
 
     const water = new Mesh(waterGeometry, waterMaterial);
-    water.position.y = 3;
+    water.position.y = 6;
     water.rotation.x = -Math.PI / 2;
     water.castShadow = true;
     water.receiveShadow = true;
@@ -296,6 +303,8 @@ async function main() {
         backward: false,
         left: false,
         right: false,
+        jump: false,
+        run: false,
         speed: 0.01
     };
 
@@ -312,6 +321,12 @@ async function main() {
         } else if (e.code === 'KeyD') {
             move.right = true;
             e.preventDefault();
+        } else if (e.code === 'Space') {
+            move.jump = true;
+            e.preventDefault();
+        } else if (e.code === 'ShiftLeft') {
+            move.run = true;
+            e.preventDefault();
         }
     });
 
@@ -327,6 +342,12 @@ async function main() {
             e.preventDefault();
         } else if (e.code === 'KeyD') {
             move.right = false;
+            e.preventDefault();
+        } else if (e.code === 'Space') {
+            move.jump = false;
+            e.preventDefault();
+        } else if (e.code === 'ShiftLeft') {
+            move.run = false;
             e.preventDefault();
         }
     });
@@ -356,79 +377,77 @@ async function main() {
 //     }
 // );
 
-    const velocity = new Vector3(0.0, 0.0, 0.0);
-
     let then = performance.now();
 
-    let frameNumber = 0.0;
     function loop(now) {
-        frameNumber += 0.05;
-        waterFrameBool++;
+        /*
+                frameNumber += 0.05;
+                waterFrameBool++;
 
-        oceanOffset.x += 0.001 * Math.sin(frameNumber);
-        oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
+                oceanOffset.x += 0.001 * Math.sin(frameNumber);
+                oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
 
-        if (waterFrameBool === 1) {
-            waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
-            waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
-            waterFrameBool = 0;
-        }
+               if (waterFrameBool === 4) {
+                    waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
+                    waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
+                    waterFrameBool = 0;
 
-        waterMaterial.displacementMap.needsUpdate = true;
-        waterMaterial.displacementMap.offset = oceanOffset;
+                }
 
-        waterMaterial.normalMap.needsUpdate = true;
-        waterMaterial.normalMap.offset = oceanOffset;
+                waterMaterial.displacementMap.needsUpdate = true;
+                waterMaterial.displacementMap.offset = oceanOffset;
 
-
-        waterImageNumber++;
-        if (waterImageNumber > 119) {
-            waterImageNumber = 0;
-        }
+               waterMaterial.normalMap.needsUpdate = true;
+                waterMaterial.normalMap.offset = oceanOffset;
 
 
+                waterImageNumber++;
+                if (waterImageNumber > 119) {
+                    waterImageNumber = 0;
+                }
+        */
         const delta = now - then;
         then = now;
 
-        const moveSpeed = move.speed * delta;
-
-        velocity.set(0.0, 0.0, 0.0);
-
         if (move.left) {
-            velocity.x -= moveSpeed;
-        }
-
-        if (move.right) {
-            velocity.x += moveSpeed;
+            cube.acceleration.x = -0.001;
+        } else if (move.right) {
+            cube.acceleration.x = 0.001;
+        } else {
+            cube.acceleration.x = 0;
+            cube.speed.x = 0;
         }
 
         if (move.forward) {
-            velocity.z -= moveSpeed;
+            cube.acceleration.z = -0.001;
+        } else if (move.backward) {
+            cube.acceleration.z = 0.001;
+        } else {
+            cube.acceleration.z = 0;
+            cube.speed.z = 0;
         }
 
-        if (move.backward) {
-            velocity.z += moveSpeed;
+        if (move.jump) {
+            cube.acceleration.y = 0.001;
+        } else {
+            cube.acceleration.y = 0;
+            cube.speed.y = 0;
+        }
+
+        if (move.run) {
+            cube.running = true;
+        } else {
+            cube.running = false;
         }
 
         // update controller rotation.
         mouseLookController.update(pitch, yaw);
+
         yaw = 0;
         pitch = 0;
 
-        // apply rotation to velocity vector, and translate moveNode with it.
-
-        velocity.applyQuaternion(camera.quaternion);
-        camera.position.add(velocity);
-
-        //animate rain
-        cloudParticles.forEach(p=> {
-            p.rotation.z -=0.002;
-        });
-
-
-        // animate cube rotation:
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+        //// Physics Engine ////
+        physicsEngine.update(delta);
 
         // render scene:
         renderer.render(scene, camera);
