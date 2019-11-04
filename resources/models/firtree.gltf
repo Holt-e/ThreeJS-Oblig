@@ -1,1 +1,0 @@
-{"asset":{"version":"2.0","generator":"babylon.js glTF exporter for 3dsmax 2018 v20191031.3"},"scene":0,"scenes":[{"nodes":[0],"extensions":{}}],"nodes":[{"children":[1],"translation":[0.0,0.0,0.0],"rotation":[0.0,0.0,0.0,1.0],"scale":[0.1,0.1,0.1],"name":"root"},{"translation":[0.0,0.0,0.0],"rotation":[0.0,0.0,0.0,1.0],"scale":[1.0,1.0,1.0],"name":"Default light"}]}

@@ -23,14 +23,16 @@ import {
     Vector3,
     WebGLRenderer
 } from './lib/three.module.js';
+
 import Utilities from './lib/Utilities.js';
 import PhysicsEngine from './lib/PhysicsEngine.js';
 import PhysicsObject from './lib/PhysicsObject.js';
 import MouseLookController from './controls/MouseLookController.js';
-
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MouseCameraController from "./controls/MouseCameraController.js";
+
+import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 let rainDrop;
 let rainCount;
@@ -326,26 +328,38 @@ async function main(array, offset) {
 
     let mouseLookController = new MouseLookController(cube);
     let mouseCameraController = new MouseCameraController(camera);
-    /*
+
             //// LOADING OBJECTS ////
             // Instantiate a loader
-        let materialLoader = new MTLLoader()
+    var loader = new GLTFLoader();
+    loader.load(
+        "resources/models/firTree.gltf.glb",
+        (gltf) => {
+            let tree = gltf.scene.children[0];
+            console.log(tree);
+            tree.position.y = 20;
+            scene.add(tree);
+        },
+    );
+
+    /*
+        let materialLoader = new MTLLoader();
 
         materialLoader.load(
-            'resources/models/firtree.mtl',
+            'resources/models/firTree.mtl',
             (material) => {
 
                 let loader = new OBJLoader();
 
                 loader.load(
                     // resource URL
-                    'resources/models/firtree.obj',
+                    'resources/models/firTree.obj',
                     // called when the resource is loaded
                     (object) => {
 
                         loader.setMaterials(material);
                         let treeMesh = object.children[0];
-                        treeMesh.scale.set(0.2,0.2,0.2);
+                        treeMesh.position.y = 15;
                         //object.scale(0.5,0.5,0.5);
                         scene.add(treeMesh);
 
@@ -364,8 +378,8 @@ async function main(array, offset) {
                     })
                 }
             )
+*/
 
-     */
 
 // We attach a click lister to the canvas-element so that we can request a pointer lock.
 // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API

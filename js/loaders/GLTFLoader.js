@@ -6,18 +6,82 @@
  * @author Don McCurdy / https://www.donmccurdy.com
  */
 
-THREE.GLTFLoader = (function () {
+import {
+    AnimationClip,
+    Bone,
+    BufferAttribute,
+    BufferGeometry,
+    ClampToEdgeWrapping,
+    Color,
+    DirectionalLight,
+    DoubleSide,
+    FileLoader,
+    FrontSide,
+    Group,
+    InterleavedBuffer,
+    InterleavedBufferAttribute,
+    Interpolant,
+    InterpolateDiscrete,
+    InterpolateLinear,
+    Line,
+    LinearFilter,
+    LinearMipmapLinearFilter,
+    LinearMipmapNearestFilter,
+    LineBasicMaterial,
+    LineLoop,
+    LineSegments,
+    Loader,
+    LoaderUtils,
+    Material,
+    Math as _Math,
+    Matrix4,
+    Mesh,
+    MeshBasicMaterial,
+    MeshStandardMaterial,
+    MirroredRepeatWrapping,
+    NearestFilter,
+    NearestMipmapLinearFilter,
+    NearestMipmapNearestFilter,
+    NumberKeyframeTrack,
+    Object3D,
+    OrthographicCamera,
+    PerspectiveCamera,
+    PointLight,
+    Points,
+    PointsMaterial,
+    PropertyBinding,
+    QuaternionKeyframeTrack,
+    RepeatWrapping,
+    RGBAFormat,
+    RGBFormat,
+    Scene,
+    ShaderLib,
+    ShaderMaterial,
+    Skeleton,
+    SkinnedMesh,
+    SpotLight,
+    sRGBEncoding,
+    TextureLoader,
+    TriangleFanDrawMode,
+    TriangleStripDrawMode,
+    UniformsUtils,
+    Vector2,
+    VectorKeyframeTrack,
+    VertexColors
+} from '../lib/three.module.js';
+
+var GLTFLoader = (function () {
 
     function GLTFLoader(manager) {
 
-        THREE.Loader.call(this, manager);
+        Loader.call(this, manager);
 
         this.dracoLoader = null;
         this.ddsLoader = null;
 
     }
 
-    GLTFLoader.prototype = Object.assign(Object.create(THREE.Loader.prototype), {
+    GLTFLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 
         constructor: GLTFLoader,
 
@@ -37,7 +101,7 @@ THREE.GLTFLoader = (function () {
 
             } else {
 
-                resourcePath = THREE.LoaderUtils.extractUrlBase(url);
+                resourcePath = LoaderUtils.extractUrlBase(url);
 
             }
 
@@ -63,7 +127,7 @@ THREE.GLTFLoader = (function () {
 
             };
 
-            var loader = new THREE.FileLoader(scope.manager);
+            var loader = new FileLoader(scope.manager);
 
             loader.setPath(this.path);
             loader.setResponseType('arraybuffer');
@@ -121,7 +185,7 @@ THREE.GLTFLoader = (function () {
 
             } else {
 
-                var magic = THREE.LoaderUtils.decodeText(new Uint8Array(data, 0, 4));
+                var magic = LoaderUtils.decodeText(new Uint8Array(data, 0, 4));
 
                 if (magic === BINARY_EXTENSION_HEADER_MAGIC) {
 
@@ -140,7 +204,7 @@ THREE.GLTFLoader = (function () {
 
                 } else {
 
-                    content = THREE.LoaderUtils.decodeText(new Uint8Array(data));
+                    content = LoaderUtils.decodeText(new Uint8Array(data));
 
                 }
 
@@ -150,7 +214,7 @@ THREE.GLTFLoader = (function () {
 
             if (json.asset === undefined || json.asset.version[0] < 2) {
 
-                if (onError) onError(new Error('THREE.GLTFLoader.js: Unsupported asset. glTF versions >=2.0 are supported. Use LegacyGLTFLoader instead.'));
+                if (onError) onError(new Error('THREE.GLTFLoader: Unsupported asset. glTF versions >=2.0 are supported. Use LegacyGLTFLoader instead.'));
                 return;
 
             }
@@ -192,7 +256,7 @@ THREE.GLTFLoader = (function () {
 
                             if (extensionsRequired.indexOf(extensionName) >= 0) {
 
-                                console.warn('THREE.GLTFLoader.js: Unknown extension "' + extensionName + '".');
+                                console.warn('THREE.GLTFLoader: Unknown extension "' + extensionName + '".');
 
                             }
 
@@ -276,7 +340,7 @@ THREE.GLTFLoader = (function () {
 
         if (!ddsLoader) {
 
-            throw new Error('THREE.GLTFLoader.js: Attempting to load .dds texture without importing THREE.DDSLoader');
+            throw new Error('THREE.GLTFLoader: Attempting to load .dds texture without importing DDSLoader');
 
         }
 
@@ -304,7 +368,7 @@ THREE.GLTFLoader = (function () {
         var lightDef = this.lightDefs[lightIndex];
         var lightNode;
 
-        var color = new THREE.Color(0xffffff);
+        var color = new Color(0xffffff);
         if (lightDef.color !== undefined) color.fromArray(lightDef.color);
 
         var range = lightDef.range !== undefined ? lightDef.range : 0;
@@ -312,18 +376,18 @@ THREE.GLTFLoader = (function () {
         switch (lightDef.type) {
 
             case 'directional':
-                lightNode = new THREE.DirectionalLight(color);
+                lightNode = new DirectionalLight(color);
                 lightNode.target.position.set(0, 0, -1);
                 lightNode.add(lightNode.target);
                 break;
 
             case 'point':
-                lightNode = new THREE.PointLight(color);
+                lightNode = new PointLight(color);
                 lightNode.distance = range;
                 break;
 
             case 'spot':
-                lightNode = new THREE.SpotLight(color);
+                lightNode = new SpotLight(color);
                 lightNode.distance = range;
                 // Handle spotlight properties.
                 lightDef.spot = lightDef.spot || {};
@@ -336,7 +400,7 @@ THREE.GLTFLoader = (function () {
                 break;
 
             default:
-                throw new Error('THREE.GLTFLoader.js: Unexpected light type, "' + lightDef.type + '".');
+                throw new Error('THREE.GLTFLoader: Unexpected light type, "' + lightDef.type + '".');
 
         }
 
@@ -367,7 +431,7 @@ THREE.GLTFLoader = (function () {
 
     GLTFMaterialsUnlitExtension.prototype.getMaterialType = function () {
 
-        return THREE.MeshBasicMaterial;
+        return MeshBasicMaterial;
 
     };
 
@@ -375,7 +439,7 @@ THREE.GLTFLoader = (function () {
 
         var pending = [];
 
-        materialParams.color = new THREE.Color(1.0, 1.0, 1.0);
+        materialParams.color = new Color(1.0, 1.0, 1.0);
         materialParams.opacity = 1.0;
 
         var metallicRoughness = materialDef.pbrMetallicRoughness;
@@ -417,18 +481,18 @@ THREE.GLTFLoader = (function () {
         var headerView = new DataView(data, 0, BINARY_EXTENSION_HEADER_LENGTH);
 
         this.header = {
-            magic: THREE.LoaderUtils.decodeText(new Uint8Array(data.slice(0, 4))),
+            magic: LoaderUtils.decodeText(new Uint8Array(data.slice(0, 4))),
             version: headerView.getUint32(4, true),
             length: headerView.getUint32(8, true)
         };
 
         if (this.header.magic !== BINARY_EXTENSION_HEADER_MAGIC) {
 
-            throw new Error('THREE.GLTFLoader.js: Unsupported glTF-Binary header.');
+            throw new Error('THREE.GLTFLoader: Unsupported glTF-Binary header.');
 
         } else if (this.header.version < 2.0) {
 
-            throw new Error('THREE.GLTFLoader.js: Legacy binary file detected. Use LegacyGLTFLoader instead.');
+            throw new Error('THREE.GLTFLoader: Legacy binary file detected. Use LegacyGLTFLoader instead.');
 
         }
 
@@ -446,7 +510,7 @@ THREE.GLTFLoader = (function () {
             if (chunkType === BINARY_EXTENSION_CHUNK_TYPES.JSON) {
 
                 var contentArray = new Uint8Array(data, BINARY_EXTENSION_HEADER_LENGTH + chunkIndex, chunkLength);
-                this.content = THREE.LoaderUtils.decodeText(contentArray);
+                this.content = LoaderUtils.decodeText(contentArray);
 
             } else if (chunkType === BINARY_EXTENSION_CHUNK_TYPES.BIN) {
 
@@ -463,7 +527,7 @@ THREE.GLTFLoader = (function () {
 
         if (this.content === null) {
 
-            throw new Error('THREE.GLTFLoader.js: JSON content not found.');
+            throw new Error('THREE.GLTFLoader: JSON content not found.');
 
         }
 
@@ -478,7 +542,7 @@ THREE.GLTFLoader = (function () {
 
         if (!dracoLoader) {
 
-            throw new Error('THREE.GLTFLoader.js: No DRACOLoader instance provided.');
+            throw new Error('THREE.GLTFLoader: No DRACOLoader instance provided.');
 
         }
 
@@ -582,7 +646,7 @@ THREE.GLTFLoader = (function () {
 
         if (transform.texCoord !== undefined) {
 
-            console.warn('THREE.GLTFLoader.js: Custom UV sets in "' + this.name + '" extension not yet supported.');
+            console.warn('THREE.GLTFLoader: Custom UV sets in "' + this.name + '" extension not yet supported.');
 
         }
 
@@ -631,7 +695,7 @@ THREE.GLTFLoader = (function () {
 
             getMaterialType: function () {
 
-                return THREE.ShaderMaterial;
+                return ShaderMaterial;
 
             },
 
@@ -639,9 +703,9 @@ THREE.GLTFLoader = (function () {
 
                 var pbrSpecularGlossiness = materialDef.extensions[this.name];
 
-                var shader = THREE.ShaderLib['standard'];
+                var shader = ShaderLib['standard'];
 
-                var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+                var uniforms = UniformsUtils.clone(shader.uniforms);
 
                 var specularMapParsFragmentChunk = [
                     '#ifdef USE_SPECULARMAP',
@@ -695,7 +759,7 @@ THREE.GLTFLoader = (function () {
                 delete uniforms.roughnessMap;
                 delete uniforms.metalnessMap;
 
-                uniforms.specular = {value: new THREE.Color().setHex(0x111111)};
+                uniforms.specular = {value: new Color().setHex(0x111111)};
                 uniforms.glossiness = {value: 0.5};
                 uniforms.specularMap = {value: null};
                 uniforms.glossinessMap = {value: null};
@@ -705,7 +769,7 @@ THREE.GLTFLoader = (function () {
                 materialParams.uniforms = uniforms;
                 materialParams.defines = {'STANDARD': ''};
 
-                materialParams.color = new THREE.Color(1.0, 1.0, 1.0);
+                materialParams.color = new Color(1.0, 1.0, 1.0);
                 materialParams.opacity = 1.0;
 
                 var pending = [];
@@ -725,9 +789,9 @@ THREE.GLTFLoader = (function () {
 
                 }
 
-                materialParams.emissive = new THREE.Color(0.0, 0.0, 0.0);
+                materialParams.emissive = new Color(0.0, 0.0, 0.0);
                 materialParams.glossiness = pbrSpecularGlossiness.glossinessFactor !== undefined ? pbrSpecularGlossiness.glossinessFactor : 1.0;
-                materialParams.specular = new THREE.Color(1.0, 1.0, 1.0);
+                materialParams.specular = new Color(1.0, 1.0, 1.0);
 
                 if (Array.isArray(pbrSpecularGlossiness.specularFactor)) {
 
@@ -751,7 +815,7 @@ THREE.GLTFLoader = (function () {
 
                 // setup material properties based on MeshStandardMaterial for Specular-Glossiness
 
-                var material = new THREE.ShaderMaterial({
+                var material = new ShaderMaterial({
                     defines: params.defines,
                     vertexShader: params.vertexShader,
                     fragmentShader: params.fragmentShader,
@@ -817,8 +881,8 @@ THREE.GLTFLoader = (function () {
              * loading a glTF model, but cloning later (e.g. by the user) would require these changes
              * AND also updating `.onBeforeRender` on the parent mesh.
              *
-             * @param  {THREE.ShaderMaterial} source
-             * @return {THREE.ShaderMaterial}
+             * @param  {ShaderMaterial} source
+             * @return {ShaderMaterial}
              */
             cloneMaterial: function (source) {
 
@@ -989,11 +1053,11 @@ THREE.GLTFLoader = (function () {
     // Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#appendix-c-spline-interpolation
     function GLTFCubicSplineInterpolant(parameterPositions, sampleValues, sampleSize, resultBuffer) {
 
-        THREE.Interpolant.call(this, parameterPositions, sampleValues, sampleSize, resultBuffer);
+        Interpolant.call(this, parameterPositions, sampleValues, sampleSize, resultBuffer);
 
     }
 
-    GLTFCubicSplineInterpolant.prototype = Object.create(THREE.Interpolant.prototype);
+    GLTFCubicSplineInterpolant.prototype = Object.create(Interpolant.prototype);
     GLTFCubicSplineInterpolant.prototype.constructor = GLTFCubicSplineInterpolant;
 
     GLTFCubicSplineInterpolant.prototype.copySampleValue_ = function (index) {
@@ -1098,18 +1162,18 @@ THREE.GLTFLoader = (function () {
     };
 
     var WEBGL_FILTERS = {
-        9728: THREE.NearestFilter,
-        9729: THREE.LinearFilter,
-        9984: THREE.NearestMipmapNearestFilter,
-        9985: THREE.LinearMipmapNearestFilter,
-        9986: THREE.NearestMipmapLinearFilter,
-        9987: THREE.LinearMipmapLinearFilter
+        9728: NearestFilter,
+        9729: LinearFilter,
+        9984: NearestMipmapNearestFilter,
+        9985: LinearMipmapNearestFilter,
+        9986: NearestMipmapLinearFilter,
+        9987: LinearMipmapLinearFilter
     };
 
     var WEBGL_WRAPPINGS = {
-        33071: THREE.ClampToEdgeWrapping,
-        33648: THREE.MirroredRepeatWrapping,
-        10497: THREE.RepeatWrapping
+        33071: ClampToEdgeWrapping,
+        33648: MirroredRepeatWrapping,
+        10497: RepeatWrapping
     };
 
     var WEBGL_TYPE_SIZES = {
@@ -1143,8 +1207,8 @@ THREE.GLTFLoader = (function () {
     var INTERPOLATION = {
         CUBICSPLINE: undefined, // We use a custom interpolant (GLTFCubicSplineInterpolation) for CUBICSPLINE tracks. Each
                                 // keyframe track will be initialized with a default interpolation type, then modified.
-        LINEAR: THREE.InterpolateLinear,
-        STEP: THREE.InterpolateDiscrete
+        LINEAR: InterpolateLinear,
+        STEP: InterpolateDiscrete
     };
 
     var ALPHA_MODES = {
@@ -1154,8 +1218,8 @@ THREE.GLTFLoader = (function () {
     };
 
     var MIME_TYPE_FORMATS = {
-        'image/png': THREE.RGBAFormat,
-        'image/jpeg': THREE.RGBFormat
+        'image/png': RGBAFormat,
+        'image/jpeg': RGBFormat
     };
 
     /* UTILITY FUNCTIONS */
@@ -1193,14 +1257,14 @@ THREE.GLTFLoader = (function () {
      */
     function createDefaultMaterial() {
 
-        defaultMaterial = defaultMaterial || new THREE.MeshStandardMaterial({
+        defaultMaterial = defaultMaterial || new MeshStandardMaterial({
             color: 0xFFFFFF,
             emissive: 0x000000,
             metalness: 1,
             roughness: 1,
             transparent: false,
             depthTest: true,
-            side: THREE.FrontSide
+            side: FrontSide
         });
 
         return defaultMaterial;
@@ -1225,7 +1289,7 @@ THREE.GLTFLoader = (function () {
     }
 
     /**
-     * @param {THREE.Object3D|THREE.Material|THREE.BufferGeometry} object
+     * @param {Object3D|Material|BufferGeometry} object
      * @param {GLTF.definition} gltfDef
      */
     function assignExtrasToUserData(object, gltfDef) {
@@ -1238,7 +1302,7 @@ THREE.GLTFLoader = (function () {
 
             } else {
 
-                console.warn('THREE.GLTFLoader.js: Ignoring primitive type .extras, ' + gltfDef.extras);
+                console.warn('THREE.GLTFLoader: Ignoring primitive type .extras, ' + gltfDef.extras);
 
             }
 
@@ -1249,10 +1313,10 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#morph-targets
      *
-     * @param {THREE.BufferGeometry} geometry
+     * @param {BufferGeometry} geometry
      * @param {Array<GLTF.Target>} targets
      * @param {GLTFParser} parser
-     * @return {Promise<THREE.BufferGeometry>}
+     * @return {Promise<BufferGeometry>}
      */
     function addMorphTargets(geometry, targets, parser) {
 
@@ -1406,7 +1470,7 @@ THREE.GLTFLoader = (function () {
     }
 
     /**
-     * @param {THREE.Mesh} mesh
+     * @param {Mesh} mesh
      * @param {GLTF.Mesh} meshDef
      */
     function updateMorphTargets(mesh, meshDef) {
@@ -1440,7 +1504,7 @@ THREE.GLTFLoader = (function () {
 
             } else {
 
-                console.warn('THREE.GLTFLoader.js: Invalid extras.targetNames length. Ignoring names.');
+                console.warn('THREE.GLTFLoader: Invalid extras.targetNames length. Ignoring names.');
 
             }
 
@@ -1502,7 +1566,7 @@ THREE.GLTFLoader = (function () {
 
             }
 
-            return new THREE.BufferAttribute(array, itemSize, attribute.normalized);
+            return new BufferAttribute(array, itemSize, attribute.normalized);
 
         }
 
@@ -1524,10 +1588,10 @@ THREE.GLTFLoader = (function () {
         // BufferGeometry caching
         this.primitiveCache = {};
 
-        this.textureLoader = new THREE.TextureLoader(this.options.manager);
+        this.textureLoader = new TextureLoader(this.options.manager);
         this.textureLoader.setCrossOrigin(this.options.crossOrigin);
 
-        this.fileLoader = new THREE.FileLoader(this.options.manager);
+        this.fileLoader = new FileLoader(this.options.manager);
         this.fileLoader.setResponseType('arraybuffer');
 
         if (this.options.crossOrigin === 'use-credentials') {
@@ -1605,7 +1669,7 @@ THREE.GLTFLoader = (function () {
         }
 
         // Meshes can (and should) be reused by multiple nodes in a glTF asset. To
-        // avoid having more than one THREE.Mesh with the same name, count
+        // avoid having more than one Mesh with the same name, count
         // references and rename instances below.
         //
         // Example: CesiumMilkTruck sample model reuses "Wheel" meshes.
@@ -1645,7 +1709,7 @@ THREE.GLTFLoader = (function () {
      * Requests the specified dependency asynchronously, with caching.
      * @param {string} type
      * @param {number} index
-     * @return {Promise<THREE.Object3D|THREE.Material|THREE.Texture|THREE.AnimationClip|ArrayBuffer|Object>}
+     * @return {Promise<Object3D|Material|THREE.Texture|AnimationClip|ArrayBuffer|Object>}
      */
     GLTFParser.prototype.getDependency = function (type, index) {
 
@@ -1757,7 +1821,7 @@ THREE.GLTFLoader = (function () {
 
         if (bufferDef.type && bufferDef.type !== 'arraybuffer') {
 
-            throw new Error('THREE.GLTFLoader.js: ' + bufferDef.type + ' buffer type is not supported.');
+            throw new Error('THREE.GLTFLoader: ' + bufferDef.type + ' buffer type is not supported.');
 
         }
 
@@ -1774,7 +1838,7 @@ THREE.GLTFLoader = (function () {
 
             loader.load(resolveURL(bufferDef.uri, options.path), resolve, undefined, function () {
 
-                reject(new Error('THREE.GLTFLoader.js: Failed to load buffer "' + bufferDef.uri + '".'));
+                reject(new Error('THREE.GLTFLoader: Failed to load buffer "' + bufferDef.uri + '".'));
 
             });
 
@@ -1804,7 +1868,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessors
      * @param {number} accessorIndex
-     * @return {Promise<THREE.BufferAttribute|THREE.InterleavedBufferAttribute>}
+     * @return {Promise<BufferAttribute|InterleavedBufferAttribute>}
      */
     GLTFParser.prototype.loadAccessor = function (accessorIndex) {
 
@@ -1870,13 +1934,13 @@ THREE.GLTFLoader = (function () {
                     array = new TypedArray(bufferView, ibSlice * byteStride, accessorDef.count * byteStride / elementBytes);
 
                     // Integer parameters to IB/IBA are in array elements, not bytes.
-                    ib = new THREE.InterleavedBuffer(array, byteStride / elementBytes);
+                    ib = new InterleavedBuffer(array, byteStride / elementBytes);
 
                     parser.cache.add(ibCacheKey, ib);
 
                 }
 
-                bufferAttribute = new THREE.InterleavedBufferAttribute(ib, itemSize, (byteOffset % byteStride) / elementBytes, normalized);
+                bufferAttribute = new InterleavedBufferAttribute(ib, itemSize, (byteOffset % byteStride) / elementBytes, normalized);
 
             } else {
 
@@ -1890,7 +1954,7 @@ THREE.GLTFLoader = (function () {
 
                 }
 
-                bufferAttribute = new THREE.BufferAttribute(array, itemSize, normalized);
+                bufferAttribute = new BufferAttribute(array, itemSize, normalized);
 
             }
 
@@ -1909,7 +1973,7 @@ THREE.GLTFLoader = (function () {
                 if (bufferView !== null) {
 
                     // Avoid modifying the original ArrayBuffer, if the bufferView wasn't initialized with zeroes.
-                    bufferAttribute = new THREE.BufferAttribute(bufferAttribute.array.slice(), bufferAttribute.itemSize, bufferAttribute.normalized);
+                    bufferAttribute = new BufferAttribute(bufferAttribute.array.slice(), bufferAttribute.itemSize, bufferAttribute.normalized);
 
                 }
 
@@ -1921,7 +1985,7 @@ THREE.GLTFLoader = (function () {
                     if (itemSize >= 2) bufferAttribute.setY(index, sparseValues[i * itemSize + 1]);
                     if (itemSize >= 3) bufferAttribute.setZ(index, sparseValues[i * itemSize + 2]);
                     if (itemSize >= 4) bufferAttribute.setW(index, sparseValues[i * itemSize + 3]);
-                    if (itemSize >= 5) throw new Error('THREE.GLTFLoader.js: Unsupported itemSize in sparse BufferAttribute.');
+                    if (itemSize >= 5) throw new Error('THREE.GLTFLoader: Unsupported itemSize in sparse BufferAttribute.');
 
                 }
 
@@ -2025,10 +2089,10 @@ THREE.GLTFLoader = (function () {
             var samplers = json.samplers || {};
             var sampler = samplers[textureDef.sampler] || {};
 
-            texture.magFilter = WEBGL_FILTERS[sampler.magFilter] || THREE.LinearFilter;
-            texture.minFilter = WEBGL_FILTERS[sampler.minFilter] || THREE.LinearMipmapLinearFilter;
-            texture.wrapS = WEBGL_WRAPPINGS[sampler.wrapS] || THREE.RepeatWrapping;
-            texture.wrapT = WEBGL_WRAPPINGS[sampler.wrapT] || THREE.RepeatWrapping;
+            texture.magFilter = WEBGL_FILTERS[sampler.magFilter] || LinearFilter;
+            texture.minFilter = WEBGL_FILTERS[sampler.minFilter] || LinearMipmapLinearFilter;
+            texture.wrapS = WEBGL_WRAPPINGS[sampler.wrapS] || RepeatWrapping;
+            texture.wrapT = WEBGL_WRAPPINGS[sampler.wrapT] || RepeatWrapping;
 
             return texture;
 
@@ -2058,7 +2122,7 @@ THREE.GLTFLoader = (function () {
                     case 'metalnessMap':
                     case 'normalMap':
                     case 'roughnessMap':
-                        texture.format = THREE.RGBFormat;
+                        texture.format = RGBFormat;
                         break;
 
                 }
@@ -2089,7 +2153,7 @@ THREE.GLTFLoader = (function () {
      * but reuse of the same glTF material may require multiple threejs materials
      * to accomodate different primitive types, defines, etc. New materials will
      * be created if necessary, and reused from a cache.
-     * @param  {THREE.Object3D} mesh Mesh, Line, or Points instance.
+     * @param  {Object3D} mesh Mesh, Line, or Points instance.
      */
     GLTFParser.prototype.assignFinalMaterial = function (mesh) {
 
@@ -2112,8 +2176,8 @@ THREE.GLTFLoader = (function () {
 
             if (!pointsMaterial) {
 
-                pointsMaterial = new THREE.PointsMaterial();
-                THREE.Material.prototype.copy.call(pointsMaterial, material);
+                pointsMaterial = new PointsMaterial();
+                Material.prototype.copy.call(pointsMaterial, material);
                 pointsMaterial.color.copy(material.color);
                 pointsMaterial.map = material.map;
                 pointsMaterial.sizeAttenuation = false; // glTF spec says points should be 1px
@@ -2132,8 +2196,8 @@ THREE.GLTFLoader = (function () {
 
             if (!lineMaterial) {
 
-                lineMaterial = new THREE.LineBasicMaterial();
-                THREE.Material.prototype.copy.call(lineMaterial, material);
+                lineMaterial = new LineBasicMaterial();
+                Material.prototype.copy.call(lineMaterial, material);
                 lineMaterial.color.copy(material.color);
 
                 this.cache.add(cacheKey, lineMaterial);
@@ -2167,7 +2231,7 @@ THREE.GLTFLoader = (function () {
 
                 if (useSkinning) cachedMaterial.skinning = true;
                 if (useVertexTangents) cachedMaterial.vertexTangents = true;
-                if (useVertexColors) cachedMaterial.vertexColors = THREE.VertexColors;
+                if (useVertexColors) cachedMaterial.vertexColors = VertexColors;
                 if (useFlatShading) cachedMaterial.flatShading = true;
                 if (useMorphTargets) cachedMaterial.morphTargets = true;
                 if (useMorphNormals) cachedMaterial.morphNormals = true;
@@ -2184,8 +2248,8 @@ THREE.GLTFLoader = (function () {
 
         if (material.aoMap && geometry.attributes.uv2 === undefined && geometry.attributes.uv !== undefined) {
 
-            console.log('THREE.GLTFLoader.js: Duplicating UVs to support aoMap.');
-            geometry.setAttribute('uv2', new THREE.BufferAttribute(geometry.attributes.uv.array, 2));
+            console.log('THREE.GLTFLoader: Duplicating UVs to support aoMap.');
+            geometry.setAttribute('uv2', new BufferAttribute(geometry.attributes.uv.array, 2));
 
         }
 
@@ -2203,7 +2267,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#materials
      * @param {number} materialIndex
-     * @return {Promise<THREE.Material>}
+     * @return {Promise<Material>}
      */
     GLTFParser.prototype.loadMaterial = function (materialIndex) {
 
@@ -2235,11 +2299,11 @@ THREE.GLTFLoader = (function () {
             // Specification:
             // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
 
-            materialType = THREE.MeshStandardMaterial;
+            materialType = MeshStandardMaterial;
 
             var metallicRoughness = materialDef.pbrMetallicRoughness || {};
 
-            materialParams.color = new THREE.Color(1.0, 1.0, 1.0);
+            materialParams.color = new Color(1.0, 1.0, 1.0);
             materialParams.opacity = 1.0;
 
             if (Array.isArray(metallicRoughness.baseColorFactor)) {
@@ -2271,7 +2335,7 @@ THREE.GLTFLoader = (function () {
 
         if (materialDef.doubleSided === true) {
 
-            materialParams.side = THREE.DoubleSide;
+            materialParams.side = DoubleSide;
 
         }
 
@@ -2293,11 +2357,11 @@ THREE.GLTFLoader = (function () {
 
         }
 
-        if (materialDef.normalTexture !== undefined && materialType !== THREE.MeshBasicMaterial) {
+        if (materialDef.normalTexture !== undefined && materialType !== MeshBasicMaterial) {
 
             pending.push(parser.assignTexture(materialParams, 'normalMap', materialDef.normalTexture));
 
-            materialParams.normalScale = new THREE.Vector2(1, 1);
+            materialParams.normalScale = new Vector2(1, 1);
 
             if (materialDef.normalTexture.scale !== undefined) {
 
@@ -2307,7 +2371,7 @@ THREE.GLTFLoader = (function () {
 
         }
 
-        if (materialDef.occlusionTexture !== undefined && materialType !== THREE.MeshBasicMaterial) {
+        if (materialDef.occlusionTexture !== undefined && materialType !== MeshBasicMaterial) {
 
             pending.push(parser.assignTexture(materialParams, 'aoMap', materialDef.occlusionTexture));
 
@@ -2319,13 +2383,13 @@ THREE.GLTFLoader = (function () {
 
         }
 
-        if (materialDef.emissiveFactor !== undefined && materialType !== THREE.MeshBasicMaterial) {
+        if (materialDef.emissiveFactor !== undefined && materialType !== MeshBasicMaterial) {
 
-            materialParams.emissive = new THREE.Color().fromArray(materialDef.emissiveFactor);
+            materialParams.emissive = new Color().fromArray(materialDef.emissiveFactor);
 
         }
 
-        if (materialDef.emissiveTexture !== undefined && materialType !== THREE.MeshBasicMaterial) {
+        if (materialDef.emissiveTexture !== undefined && materialType !== MeshBasicMaterial) {
 
             pending.push(parser.assignTexture(materialParams, 'emissiveMap', materialDef.emissiveTexture));
 
@@ -2335,7 +2399,7 @@ THREE.GLTFLoader = (function () {
 
             var material;
 
-            if (materialType === THREE.ShaderMaterial) {
+            if (materialType === ShaderMaterial) {
 
                 material = extensions[EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS].createMaterial(materialParams);
 
@@ -2348,9 +2412,9 @@ THREE.GLTFLoader = (function () {
             if (materialDef.name !== undefined) material.name = materialDef.name;
 
             // baseColorTexture, emissiveTexture, and specularGlossinessTexture use sRGB encoding.
-            if (material.map) material.map.encoding = THREE.sRGBEncoding;
-            if (material.emissiveMap) material.emissiveMap.encoding = THREE.sRGBEncoding;
-            if (material.specularMap) material.specularMap.encoding = THREE.sRGBEncoding;
+            if (material.map) material.map.encoding = sRGBEncoding;
+            if (material.emissiveMap) material.emissiveMap.encoding = sRGBEncoding;
+            if (material.specularMap) material.specularMap.encoding = sRGBEncoding;
 
             assignExtrasToUserData(material, materialDef);
 
@@ -2363,10 +2427,10 @@ THREE.GLTFLoader = (function () {
     };
 
     /**
-     * @param {THREE.BufferGeometry} geometry
+     * @param {BufferGeometry} geometry
      * @param {GLTF.Primitive} primitiveDef
      * @param {GLTFParser} parser
-     * @return {Promise<THREE.BufferGeometry>}
+     * @return {Promise<BufferGeometry>}
      */
     function addPrimitiveAttributes(geometry, primitiveDef, parser) {
 
@@ -2426,7 +2490,7 @@ THREE.GLTFLoader = (function () {
      * Creates BufferGeometries from primitives.
      *
      * @param {Array<GLTF.Primitive>} primitives
-     * @return {Promise<Array<THREE.BufferGeometry>>}
+     * @return {Promise<Array<BufferGeometry>>}
      */
     GLTFParser.prototype.loadGeometries = function (primitives) {
 
@@ -2473,7 +2537,7 @@ THREE.GLTFLoader = (function () {
                 } else {
 
                     // Otherwise create a new geometry
-                    geometryPromise = addPrimitiveAttributes(new THREE.BufferGeometry(), primitive, parser);
+                    geometryPromise = addPrimitiveAttributes(new BufferGeometry(), primitive, parser);
 
                 }
 
@@ -2493,7 +2557,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#meshes
      * @param {number} meshIndex
-     * @return {Promise<THREE.Group|THREE.Mesh|THREE.SkinnedMesh>}
+     * @return {Promise<Group|Mesh|SkinnedMesh>}
      */
     GLTFParser.prototype.loadMesh = function (meshIndex) {
 
@@ -2539,8 +2603,8 @@ THREE.GLTFLoader = (function () {
 
                         // .isSkinnedMesh isn't in glTF spec. See .markDefs()
                         mesh = meshDef.isSkinnedMesh === true
-                            ? new THREE.SkinnedMesh(geometry, material)
-                            : new THREE.Mesh(geometry, material);
+                            ? new SkinnedMesh(geometry, material)
+                            : new Mesh(geometry, material);
 
                         if (mesh.isSkinnedMesh === true && !mesh.geometry.attributes.skinWeight.normalized) {
 
@@ -2552,33 +2616,33 @@ THREE.GLTFLoader = (function () {
 
                         if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP) {
 
-                            mesh.drawMode = THREE.TriangleStripDrawMode;
+                            mesh.drawMode = TriangleStripDrawMode;
 
                         } else if (primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN) {
 
-                            mesh.drawMode = THREE.TriangleFanDrawMode;
+                            mesh.drawMode = TriangleFanDrawMode;
 
                         }
 
                     } else if (primitive.mode === WEBGL_CONSTANTS.LINES) {
 
-                        mesh = new THREE.LineSegments(geometry, material);
+                        mesh = new LineSegments(geometry, material);
 
                     } else if (primitive.mode === WEBGL_CONSTANTS.LINE_STRIP) {
 
-                        mesh = new THREE.Line(geometry, material);
+                        mesh = new Line(geometry, material);
 
                     } else if (primitive.mode === WEBGL_CONSTANTS.LINE_LOOP) {
 
-                        mesh = new THREE.LineLoop(geometry, material);
+                        mesh = new LineLoop(geometry, material);
 
                     } else if (primitive.mode === WEBGL_CONSTANTS.POINTS) {
 
-                        mesh = new THREE.Points(geometry, material);
+                        mesh = new Points(geometry, material);
 
                     } else {
 
-                        throw new Error('THREE.GLTFLoader.js: Primitive mode unsupported: ' + primitive.mode);
+                        throw new Error('THREE.GLTFLoader: Primitive mode unsupported: ' + primitive.mode);
 
                     }
 
@@ -2606,7 +2670,7 @@ THREE.GLTFLoader = (function () {
 
                 }
 
-                var group = new THREE.Group();
+                var group = new Group();
 
                 for (var i = 0, il = meshes.length; i < il; i++) {
 
@@ -2635,18 +2699,18 @@ THREE.GLTFLoader = (function () {
 
         if (!params) {
 
-            console.warn('THREE.GLTFLoader.js: Missing camera parameters.');
+            console.warn('THREE.GLTFLoader: Missing camera parameters.');
             return;
 
         }
 
         if (cameraDef.type === 'perspective') {
 
-            camera = new THREE.PerspectiveCamera(THREE.Math.radToDeg(params.yfov), params.aspectRatio || 1, params.znear || 1, params.zfar || 2e6);
+            camera = new PerspectiveCamera(_Math.radToDeg(params.yfov), params.aspectRatio || 1, params.znear || 1, params.zfar || 2e6);
 
         } else if (cameraDef.type === 'orthographic') {
 
-            camera = new THREE.OrthographicCamera(params.xmag / -2, params.xmag / 2, params.ymag / 2, params.ymag / -2, params.znear, params.zfar);
+            camera = new OrthographicCamera(params.xmag / -2, params.xmag / 2, params.ymag / 2, params.ymag / -2, params.znear, params.zfar);
 
         }
 
@@ -2688,7 +2752,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#animations
      * @param {number} animationIndex
-     * @return {Promise<THREE.AnimationClip>}
+     * @return {Promise<AnimationClip>}
      */
     GLTFParser.prototype.loadAnimation = function (animationIndex) {
 
@@ -2756,32 +2820,32 @@ THREE.GLTFLoader = (function () {
 
                     case PATH_PROPERTIES.weights:
 
-                        TypedKeyframeTrack = THREE.NumberKeyframeTrack;
+                        TypedKeyframeTrack = NumberKeyframeTrack;
                         break;
 
                     case PATH_PROPERTIES.rotation:
 
-                        TypedKeyframeTrack = THREE.QuaternionKeyframeTrack;
+                        TypedKeyframeTrack = QuaternionKeyframeTrack;
                         break;
 
                     case PATH_PROPERTIES.position:
                     case PATH_PROPERTIES.scale:
                     default:
 
-                        TypedKeyframeTrack = THREE.VectorKeyframeTrack;
+                        TypedKeyframeTrack = VectorKeyframeTrack;
                         break;
 
                 }
 
                 var targetName = node.name ? node.name : node.uuid;
 
-                var interpolation = sampler.interpolation !== undefined ? INTERPOLATION[sampler.interpolation] : THREE.InterpolateLinear;
+                var interpolation = sampler.interpolation !== undefined ? INTERPOLATION[sampler.interpolation] : InterpolateLinear;
 
                 var targetNames = [];
 
                 if (PATH_PROPERTIES[target.path] === PATH_PROPERTIES.weights) {
 
-                    // Node may be a THREE.Group (glTF mesh with several primitives) or a THREE.Mesh.
+                    // Node may be a Group (glTF mesh with several primitives) or a Mesh.
                     node.traverse(function (object) {
 
                         if (object.isMesh === true && object.morphTargetInfluences) {
@@ -2822,7 +2886,7 @@ THREE.GLTFLoader = (function () {
 
                     } else {
 
-                        throw new Error('THREE.GLTFLoader.js: Unsupported output accessor component type.');
+                        throw new Error('THREE.GLTFLoader: Unsupported output accessor component type.');
 
                     }
 
@@ -2873,7 +2937,7 @@ THREE.GLTFLoader = (function () {
 
             var name = animationDef.name !== undefined ? animationDef.name : 'animation_' + animationIndex;
 
-            return new THREE.AnimationClip(name, undefined, tracks);
+            return new AnimationClip(name, undefined, tracks);
 
         });
 
@@ -2882,7 +2946,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#nodes-and-hierarchy
      * @param {number} nodeIndex
-     * @return {Promise<THREE.Object3D>}
+     * @return {Promise<Object3D>}
      */
     GLTFParser.prototype.loadNode = function (nodeIndex) {
 
@@ -2974,11 +3038,11 @@ THREE.GLTFLoader = (function () {
             // .isBone isn't in glTF spec. See .markDefs
             if (nodeDef.isBone === true) {
 
-                node = new THREE.Bone();
+                node = new Bone();
 
             } else if (objects.length > 1) {
 
-                node = new THREE.Group();
+                node = new Group();
 
             } else if (objects.length === 1) {
 
@@ -2986,7 +3050,7 @@ THREE.GLTFLoader = (function () {
 
             } else {
 
-                node = new THREE.Object3D();
+                node = new Object3D();
 
             }
 
@@ -3003,7 +3067,7 @@ THREE.GLTFLoader = (function () {
             if (nodeDef.name !== undefined) {
 
                 node.userData.name = nodeDef.name;
-                node.name = THREE.PropertyBinding.sanitizeNodeName(nodeDef.name);
+                node.name = PropertyBinding.sanitizeNodeName(nodeDef.name);
 
             }
 
@@ -3013,7 +3077,7 @@ THREE.GLTFLoader = (function () {
 
             if (nodeDef.matrix !== undefined) {
 
-                var matrix = new THREE.Matrix4();
+                var matrix = new Matrix4();
                 matrix.fromArray(nodeDef.matrix);
                 node.applyMatrix(matrix);
 
@@ -3048,7 +3112,7 @@ THREE.GLTFLoader = (function () {
     /**
      * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#scenes
      * @param {number} sceneIndex
-     * @return {Promise<THREE.Scene>}
+     * @return {Promise<Scene>}
      */
     GLTFParser.prototype.loadScene = function () {
 
@@ -3097,7 +3161,7 @@ THREE.GLTFLoader = (function () {
 
                                 bones.push(jointNode);
 
-                                var mat = new THREE.Matrix4();
+                                var mat = new Matrix4();
 
                                 if (skinEntry.inverseBindMatrices !== undefined) {
 
@@ -3109,13 +3173,13 @@ THREE.GLTFLoader = (function () {
 
                             } else {
 
-                                console.warn('THREE.GLTFLoader.js: Joint "%s" could not be found.', skinEntry.joints[j]);
+                                console.warn('THREE.GLTFLoader: Joint "%s" could not be found.', skinEntry.joints[j]);
 
                             }
 
                         }
 
-                        mesh.bind(new THREE.Skeleton(bones, boneInverses), mesh.matrixWorld);
+                        mesh.bind(new Skeleton(bones, boneInverses), mesh.matrixWorld);
 
                     });
 
@@ -3157,7 +3221,7 @@ THREE.GLTFLoader = (function () {
             var sceneDef = this.json.scenes[sceneIndex];
             var parser = this;
 
-            var scene = new THREE.Scene();
+            var scene = new Scene();
             if (sceneDef.name !== undefined) scene.name = sceneDef.name;
 
             assignExtrasToUserData(scene, sceneDef);
@@ -3187,3 +3251,5 @@ THREE.GLTFLoader = (function () {
     return GLTFLoader;
 
 })();
+
+export {GLTFLoader};
