@@ -3,7 +3,7 @@ import {Mesh} from '../lib/three.module.js';
 export default class PhysicsObject extends Mesh {
 
     constructor(geometry, material, weight = 0, collision = true, sizeY = 1,
-                maxSpeed = 2, maxAcceleration = 3, running = false) {
+                maxSpeed = 1, maxAcceleration = 1, running = false) {
 
         super(geometry, material);
 

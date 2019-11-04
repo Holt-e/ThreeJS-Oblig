@@ -1,0 +1,30 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 31.10.2019 20:29:54
+
+newmtl 01___Default
+	Ns 0.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.2510 0.0118
+	Kd 0.0000 0.2510 0.0118
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\Joakim\Desktop\fir_tree_PNG5665.png.jpg
+	map_Kd C:\Users\Joakim\Desktop\fir_tree_PNG5665.png.jpg
+
+newmtl 03___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.1294 0.0353 0.0000
+	Kd 0.1294 0.0353 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\Joakim\Desktop\depositphotos_152776328-stock-photo-closeup-tree-bark-texture-moss.jpg
+	map_Kd C:\Users\Joakim\Desktop\depositphotos_152776328-stock-photo-closeup-tree-bark-texture-moss.jpg

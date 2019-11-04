@@ -4,12 +4,10 @@ import {
     DirectionalLight,
     Fog,
     Mesh,
-    MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
     PCFSoftShadowMap,
     PerspectiveCamera,
-    PlaneBufferGeometry,
     PlaneGeometry,
     RepeatWrapping,
     Scene,
@@ -20,6 +18,7 @@ import {
     WebGLRenderer
 } from './lib/three.module.js';
 
+import OBJLoader from './loaders/OBJLoader.js';
 import Utilities from './lib/Utilities.js';
 import PhysicsEngine from './lib/PhysicsEngine.js';
 import PhysicsObject from './lib/PhysicsObject.js';
@@ -27,6 +26,7 @@ import MouseLookController from './controls/MouseLookController.js';
 
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
+import MTLLoader from "./loaders/MTLLoader.js";
 
 let terrainGeometry;
 let physicsEngine;
@@ -85,7 +85,6 @@ async function main(array, offset) {
     physicsObjects.push(cube);
 
     cube.castShadow = true;
-    cube.position.set(0, 15, 0);
 
     scene.add(cube);
     cube.add(camera);
@@ -105,14 +104,14 @@ async function main(array, offset) {
      */
 
 //// Terrain ////
-    Utilities.loadImage('resources/images/genHeight.png').then((heightmapImage) => {
+    Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
 
         const width = 100;
 
         terrainGeometry = new TerrainBufferGeometry({
             width,
             heightmapImage,
-            numberOfSubdivisions: 1024,
+            numberOfSubdivisions: 256,
             height: 30
         });
         /*
@@ -229,36 +228,36 @@ async function main(array, offset) {
     //************Rain**********
 
 //************Clouds**********
+    /*
+        let cloudParticles = [];
+        let cloudLoader = new TextureLoader();
+        cloudLoader.load(`resources/images/smoke1.png`,function (texture) {
 
-    let cloudParticles = [];
-    let cloudLoader = new TextureLoader();
-    cloudLoader.load(`resources/images/smoke1.png`,function (texture) {
 
-
-        let cloudGeo = new PlaneBufferGeometry(600,600);
-        let cloudMaterial = new MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            reflectivity: 1,
-            color: 	0x686868,
+            let cloudGeo = new PlaneBufferGeometry(600,600);
+            let cloudMaterial = new MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                reflectivity: 1,
+                color: 	0x686868,
+            });
+            for(let p=0; p<50; p++) {
+                let cloud = new Mesh(cloudGeo,cloudMaterial);
+                cloud.position.set(
+                    Math.random()*800 -400,
+                    500,
+                    Math.random()*500 - 450
+                );
+                cloud.rotation.x = 1.16;
+                cloud.rotation.y = -0.12;
+                cloud.rotation.z = Math.random()*360;
+                cloud.material.opacity = 0.9;
+                cloudParticles.push(cloud);
+                scene.add(cloud);
+            }
+            loop();
         });
-        for(let p=0; p<50; p++) {
-            let cloud = new Mesh(cloudGeo,cloudMaterial);
-            cloud.position.set(
-                Math.random()*800 -400,
-                500,
-                Math.random()*500 - 450
-            );
-            cloud.rotation.x = 1.16;
-            cloud.rotation.y = -0.12;
-            cloud.rotation.z = Math.random()*360;
-            cloud.material.opacity = 0.9;
-            cloudParticles.push(cloud);
-            scene.add(cloud);
-        }
-        loop();
-    });
-
+    */
     //***********Rain*********
 
 //// FOG ////
@@ -271,6 +270,41 @@ async function main(array, offset) {
     /**
      * Set up camera controller:
      */
+
+        //// LOADING OBJECTS ////
+        // Instantiate a loader
+    let materialLoader = new MTLLoader()
+    let firMat = materialLoader.load(
+        'resources/models/firtree.mtl'
+    );
+
+    let loader = new OBJLoader();
+
+// Load a glTF resource
+    loader.load(
+        // resource URL
+        'resources/models/firtree.obj',
+        // called when the resource is loaded
+        function (object) {
+
+            loader.setMaterials(firMat);
+            //object.scale(0.5,0.5,0.5);
+            scene.add(object);
+
+        },
+        // called while loading is progressing
+        function (xhr) {
+
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+
+        },
+        // called when loading has errors
+        function (error) {
+
+            console.log('An error happened');
+
+        }
+    );
 
     const mouseLookController = new MouseLookController(camera);
 
@@ -352,31 +386,6 @@ async function main(array, offset) {
         }
     });
 
-// // instantiate a loader
-// const loader = new OBJLoader();
-
-// // load a resource
-// loader.load(
-//     // resource URL
-//     'resources/models/sofa.obj',
-//     // called when resource is loaded
-//     function (object) {
-//         scene.add(object);
-//     },
-//     // called when loading is in progresses
-//     function (xhr) {
-
-//         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-
-//     },
-//     // called when loading has errors
-//     function (error) {
-
-//         console.log('An error happened');
-
-//     }
-// );
-
     let then = performance.now();
 
     function loop(now) {
@@ -410,28 +419,27 @@ async function main(array, offset) {
         then = now;
 
         if (move.left) {
-            cube.acceleration.x = -0.001;
+            cube.acceleration.x = -0.0001;
         } else if (move.right) {
-            cube.acceleration.x = 0.001;
+            cube.acceleration.x = 0.0001;
         } else {
             cube.acceleration.x = 0;
             cube.speed.x = 0;
         }
 
         if (move.forward) {
-            cube.acceleration.z = -0.001;
+            cube.acceleration.z = -0.0001;
         } else if (move.backward) {
-            cube.acceleration.z = 0.001;
+            cube.acceleration.z = 0.0001;
         } else {
             cube.acceleration.z = 0;
             cube.speed.z = 0;
         }
 
         if (move.jump) {
-            cube.acceleration.y = 0.001;
+            cube.acceleration.y = 0.22;
         } else {
             cube.acceleration.y = 0;
-            cube.speed.y = 0;
         }
 
         if (move.run) {
