@@ -30,6 +30,7 @@ import MouseLookController from './controls/MouseLookController.js';
 
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
+import MouseCameraController from "./controls/MouseCameraController.js";
 
 let rainDrop;
 let rainCount;
@@ -101,7 +102,8 @@ async function main(array, offset) {
     cube.castShadow = true;
 
     scene.add(cube);
-    camera.position.y = 3;
+    camera.position.y = 5;
+    camera.position.z = 5;
     cube.add(camera);
 
     pointLight.target = cube;
@@ -323,6 +325,7 @@ async function main(array, offset) {
      */
 
     let mouseLookController = new MouseLookController(cube);
+    let mouseCameraController = new MouseCameraController(camera);
     /*
             //// LOADING OBJECTS ////
             // Instantiate a loader
@@ -504,7 +507,8 @@ async function main(array, offset) {
         }
 
         // update controller rotation.
-        mouseLookController.update(pitch, yaw);
+        mouseLookController.update(yaw);
+        mouseCameraController.update(pitch);
 
         yaw = 0;
         pitch = 0;

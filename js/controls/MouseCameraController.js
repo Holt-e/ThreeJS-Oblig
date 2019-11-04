@@ -1,9 +1,9 @@
 import {Quaternion, Vector3} from '../lib/three.module.js';
 
-export default class MouseLookController {
+export default class MouseCameraController {
 
     constructor(camera) {
-        
+
         this.camera = camera;
 
         this.FD = new Vector3(0, 0, 1);
@@ -15,12 +15,12 @@ export default class MouseLookController {
 
     }
 
-    update(yaw) {
+    update(pitch, yaw) {
 
-        this.yawQuaternion.setFromAxisAngle(this.UD, -yaw);
+        this.pitchQuaternion.setFromAxisAngle(this.LD, -pitch);
 
-        this.camera.setRotationFromQuaternion(this.yawQuaternion.multiply(this.camera.quaternion));
+        this.camera.setRotationFromQuaternion(this.camera.quaternion.multiply(this.pitchQuaternion));
 
     }
-    
+
 }
