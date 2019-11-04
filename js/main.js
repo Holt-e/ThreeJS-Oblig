@@ -15,7 +15,16 @@ import {
     TextureLoader,
     UVMapping,
     Vector2,
-    WebGLRenderer
+    WebGLRenderer,
+    PlaneBufferGeometry,
+    MeshBasicMaterial,
+    MeshLambertMaterial,
+    Geometry,
+    Math,
+    Vector3,
+    Points,
+    PointsMaterial,
+
 } from './lib/three.module.js';
 
 import OBJLoader from './loaders/OBJLoader.js';
@@ -28,6 +37,8 @@ import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MTLLoader from "./loaders/MTLLoader.js";
 
+let rainDrop;
+let rainCount;
 let terrainGeometry;
 let physicsEngine;
 
@@ -225,41 +236,58 @@ async function main(array, offset) {
 
     scene.add(water);
 
-    //************Rain**********
-
 //************Clouds**********
-    /*
+/*
         let cloudParticles = [];
         let cloudLoader = new TextureLoader();
-        cloudLoader.load(`resources/images/smoke1.png`,function (texture) {
+        cloudLoader.load('resources/images/smoke1.png',function (texture) {
 
 
-            let cloudGeo = new PlaneBufferGeometry(600,600);
+            let cloudGeo = new PlaneBufferGeometry(500,500);
             let cloudMaterial = new MeshBasicMaterial({
                 map: texture,
                 transparent: true,
-                reflectivity: 1,
-                color: 	0x686868,
+
             });
-            for(let p=0; p<50; p++) {
+            for(let p=0; p<60; p++) {
                 let cloud = new Mesh(cloudGeo,cloudMaterial);
                 cloud.position.set(
-                    Math.random()*800 -400,
+                    Math.randInt() *800 -400,
                     500,
-                    Math.random()*500 - 450
+                    Math.randInt() *500 - 450
                 );
                 cloud.rotation.x = 1.16;
                 cloud.rotation.y = -0.12;
-                cloud.rotation.z = Math.random()*360;
-                cloud.material.opacity = 0.9;
+                cloud.rotation.z = Math.randInt() *360;
+                cloud.material.opacity = 0.6;
                 cloudParticles.push(cloud);
                 scene.add(cloud);
             }
             loop();
         });
-    */
+*/
     //***********Rain*********
+/*
+    let rainGeo = new Geometry();
+    for(let i= 0 ; i>rainCount; i++) {
+        rainDrop = new Vector3(
+            Math.randInt() * 400 - 200,
+            Math.randInt() * 500 - 250,
+            Math.randInt() * 400 - 200,
+        );
+        rainDrop.velocity = {};
+        rainDrop.velocity = 0;
+        rainGeo.vertices.push(rainDrop);
+    }
 
+    let rainMaterial = new PointsMaterial({
+        color: 0xaaaaaa,
+        size:0.1,
+        transparent: true
+    });
+    let rain = new Points(rainGeo,rainMaterial);
+    scene.add(rain);
+*/
 //// FOG ////
 
     const color = 0x6c7c8a;  // white
@@ -271,6 +299,7 @@ async function main(array, offset) {
      * Set up camera controller:
      */
 
+    /*
         //// LOADING OBJECTS ////
         // Instantiate a loader
     let materialLoader = new MTLLoader()
@@ -304,8 +333,9 @@ async function main(array, offset) {
             console.log('An error happened');
 
         }
-    );
 
+    );
+*/
     const mouseLookController = new MouseLookController(camera);
 
 // We attach a click lister to the canvas-element so that we can request a pointer lock.
@@ -389,6 +419,8 @@ async function main(array, offset) {
     let then = performance.now();
 
     function loop(now) {
+
+
         /*
                 frameNumber += 0.05;
                 waterFrameBool++;
@@ -442,11 +474,7 @@ async function main(array, offset) {
             cube.acceleration.y = 0;
         }
 
-        if (move.run) {
-            cube.running = true;
-        } else {
-            cube.running = false;
-        }
+        cube.running = move.run;
 
         // update controller rotation.
         mouseLookController.update(pitch, yaw);
@@ -457,13 +485,30 @@ async function main(array, offset) {
         //// Physics Engine ////
         physicsEngine.update(delta);
 
+        //*********Cloud Animate**********
+        /*
+        cloudParticles.forEach(p => {
+            p.rotation.z -=0.002;
+        });
+*/
+        //********Rain Animate*********
+        /*
+        rainGeo.vertices.forEach(p=> {
+        p.velocity -= 0.1 + Math.randInt() * 0.1;
+        p.y += p.velocity;
+        if (p.y < -200) {
+            p.y = 200;
+            p.velocity = 0;
+        }
+        });
+        rainGeo.verticesNeedUpdate = true;
+*/
         // render scene:
         renderer.render(scene, camera);
 
         requestAnimationFrame(loop);
 
-    };
-
+    }
     loop(performance.now());
 }
 

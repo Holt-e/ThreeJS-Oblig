@@ -1,5 +1,4 @@
 import Utilities from '../lib/Utilities.js';
-
 export default class PhysicsEngine {
 
     constructor(physicsObjects, terrainGeometry) {
@@ -35,7 +34,7 @@ export default class PhysicsEngine {
 
             } else if (p.position.y < groundHeight + 1) {
 
-                console.log("Ground IF")
+                console.log("Ground IF");
                 p.position.y = groundHeight + 1;
             }
 
