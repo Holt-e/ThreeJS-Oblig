@@ -1,7 +1,9 @@
 import {
     BoxBufferGeometry,
+    Clock,
     CubeTextureLoader,
     DirectionalLight,
+    DoubleSide,
     Fog,
     Mesh,
     MeshPhongMaterial,
@@ -9,25 +11,18 @@ import {
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneGeometry,
+    Raycaster,
     RepeatWrapping,
     Scene,
+    Sprite,
+    SpriteMaterial,
     Texture,
     TextureLoader,
     UVMapping,
     Vector2,
-    WebGLRenderer,
-    PlaneBufferGeometry,
-    MeshBasicMaterial,
-    MeshLambertMaterial,
-    Geometry,
-    Math,
     Vector3,
-    Points,
-    PointsMaterial,
-
+    WebGLRenderer
 } from './lib/three.module.js';
-
-import OBJLoader from './loaders/OBJLoader.js';
 import Utilities from './lib/Utilities.js';
 import PhysicsEngine from './lib/PhysicsEngine.js';
 import PhysicsObject from './lib/PhysicsObject.js';
@@ -35,14 +30,22 @@ import MouseLookController from './controls/MouseLookController.js';
 
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
-import MTLLoader from "./loaders/MTLLoader.js";
 
 let rainDrop;
 let rainCount;
 let terrainGeometry;
 let physicsEngine;
 
+function getRnd(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function getRndInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 async function main(array, offset) {
+
     const textureLoader = new TextureLoader();
     const scene = new Scene();
 
@@ -98,12 +101,10 @@ async function main(array, offset) {
     cube.castShadow = true;
 
     scene.add(cube);
+    camera.position.y = 3;
     cube.add(camera);
 
     pointLight.target = cube;
-    camera.position.z = 5;
-    camera.position.y = 5;
-
     /**
      * Add terrain:
      *
@@ -125,19 +126,7 @@ async function main(array, offset) {
             numberOfSubdivisions: 256,
             height: 30
         });
-        /*
-                //*********Grass Instance ********** DOES NOT WORK YET
-                var grassInstance = ImageUtils.loadTexture('resources/texture/grass_03.png');
-                var ObjGrass = new MeshBasicMaterial({
-                    transparent: true,
-                    map: grassInstance
-                });
-                ObjGrass.depthTest = false;
-                ObjGrass.side = DoubleSide;
-                var objtree = new Mesh(PlaneGeometry,1,1,ObjGrass);
-                objtree.name = "Billboard";
-                objtree.receiveShadow = true;
-        */
+
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
         grassTexture.wrapT = RepeatWrapping;
@@ -162,11 +151,44 @@ async function main(array, offset) {
 
         terrain.castShadow = true;
         terrain.receiveShadow = true;
-
+        terrain.name = "terrain";
+        console.log(terrain)
         scene.add(terrain);
 
-        physicsEngine = new PhysicsEngine(physicsObjects, terrainGeometry);
+        physicsEngine = new PhysicsEngine(physicsObjects, raycaster, terrain);
+
+        for (let i = 0; i < 100; i++) {
+            let j = new Sprite(gressMaterial[getRndInt(0, 3)]);
+            j.position.x = getRnd(-10, 10);
+            j.position.z = getRnd(-10, 10);
+            raycaster.set(new Vector3(j.position.x, 50, j.position.z), new Vector3(0, -1, 0));
+
+            let intersect = raycaster.intersectObject(terrain);
+            if (intersect.length > 0) {
+                j.position.y = intersect[0].point.y + 0.5;
+            }
+
+
+            scene.add(j);
+        }
+
     });
+
+
+//// Gress Sprites ////
+
+    let raycaster = new Raycaster(new Vector3(0, 50, 0), new Vector3(0, -1, 0));
+
+    const gressMaterial = [];
+    for (let i = 0; i < 3; i++) {
+        let gressSprite = new TextureLoader().load(`resources/textures/grassSprite${i.toString()}.png`)
+        gressMaterial.push(new SpriteMaterial({
+            map: gressSprite,
+            side: DoubleSide,
+            transparent: true,
+        }));
+
+    }
 
 //// ENV MAP ////
 
@@ -237,57 +259,58 @@ async function main(array, offset) {
     scene.add(water);
 
 //************Clouds**********
-/*
-        let cloudParticles = [];
-        let cloudLoader = new TextureLoader();
-        cloudLoader.load('resources/images/smoke1.png',function (texture) {
+    /*
+            let cloudParticles = [];
+            let cloudLoader = new TextureLoader();
+            cloudLoader.load(
+                'resources/images/smoke1.png',
+                (texture) => {
 
 
-            let cloudGeo = new PlaneBufferGeometry(500,500);
-            let cloudMaterial = new MeshBasicMaterial({
-                map: texture,
-                transparent: true,
+                let cloudGeo = new PlaneBufferGeometry(500,500);
+                let cloudMaterial = new MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
 
+                });
+                for(let p=0; p<60; p++) {
+                    let cloud = new Mesh(cloudGeo,cloudMaterial);
+                    cloud.position.set(
+                        Math.randInt() *800 -400,
+                        500,
+                        Math.randInt() *500 - 450
+                    );
+                    cloud.rotation.x = 1.16;
+                    cloud.rotation.y = -0.12;
+                    cloud.rotation.z = Math.randInt() *360;
+                    cloud.material.opacity = 0.6;
+                    cloudParticles.push(cloud);
+                    scene.add(cloud);
+                }
             });
-            for(let p=0; p<60; p++) {
-                let cloud = new Mesh(cloudGeo,cloudMaterial);
-                cloud.position.set(
-                    Math.randInt() *800 -400,
-                    500,
-                    Math.randInt() *500 - 450
-                );
-                cloud.rotation.x = 1.16;
-                cloud.rotation.y = -0.12;
-                cloud.rotation.z = Math.randInt() *360;
-                cloud.material.opacity = 0.6;
-                cloudParticles.push(cloud);
-                scene.add(cloud);
-            }
-            loop();
-        });
-*/
-    //***********Rain*********
-/*
-    let rainGeo = new Geometry();
-    for(let i= 0 ; i>rainCount; i++) {
-        rainDrop = new Vector3(
-            Math.randInt() * 400 - 200,
-            Math.randInt() * 500 - 250,
-            Math.randInt() * 400 - 200,
-        );
-        rainDrop.velocity = {};
-        rainDrop.velocity = 0;
-        rainGeo.vertices.push(rainDrop);
-    }
 
-    let rainMaterial = new PointsMaterial({
-        color: 0xaaaaaa,
-        size:0.1,
-        transparent: true
-    });
-    let rain = new Points(rainGeo,rainMaterial);
-    scene.add(rain);
-*/
+        //***********Rain*********
+
+        let rainGeo = new Geometry();
+        for(let i= 0 ; i>rainCount; i++) {
+            rainDrop = new Vector3(
+                Math.randInt() * 400 - 200,
+                Math.randInt() * 500 - 250,
+                Math.randInt() * 400 - 200,
+            );
+            rainDrop.velocity = {};
+            rainDrop.velocity = 0;
+            rainGeo.vertices.push(rainDrop);
+        }
+
+        let rainMaterial = new PointsMaterial({
+            color: 0xaaaaaa,
+            size:0.1,
+            transparent: true
+        });
+        let rain = new Points(rainGeo,rainMaterial);
+        scene.add(rain);
+    */
 //// FOG ////
 
     const color = 0x6c7c8a;  // white
@@ -299,44 +322,47 @@ async function main(array, offset) {
      * Set up camera controller:
      */
 
+    let mouseLookController = new MouseLookController(cube);
     /*
-        //// LOADING OBJECTS ////
-        // Instantiate a loader
-    let materialLoader = new MTLLoader()
-    let firMat = materialLoader.load(
-        'resources/models/firtree.mtl'
-    );
+            //// LOADING OBJECTS ////
+            // Instantiate a loader
+        let materialLoader = new MTLLoader()
 
-    let loader = new OBJLoader();
+        materialLoader.load(
+            'resources/models/firtree.mtl',
+            (material) => {
 
-// Load a glTF resource
-    loader.load(
-        // resource URL
-        'resources/models/firtree.obj',
-        // called when the resource is loaded
-        function (object) {
+                let loader = new OBJLoader();
 
-            loader.setMaterials(firMat);
-            //object.scale(0.5,0.5,0.5);
-            scene.add(object);
+                loader.load(
+                    // resource URL
+                    'resources/models/firtree.obj',
+                    // called when the resource is loaded
+                    (object) => {
 
-        },
-        // called while loading is progressing
-        function (xhr) {
+                        loader.setMaterials(material);
+                        let treeMesh = object.children[0];
+                        treeMesh.scale.set(0.2,0.2,0.2);
+                        //object.scale(0.5,0.5,0.5);
+                        scene.add(treeMesh);
 
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    },
+                    // called while loading is progressing
+                    function (xhr) {
 
-        },
-        // called when loading has errors
-        function (error) {
+                        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 
-            console.log('An error happened');
+                    },
+                    // called when loading has errors
+                    function (error) {
 
-        }
+                        console.log('An error happened');
 
-    );
-*/
-    const mouseLookController = new MouseLookController(camera);
+                    })
+                }
+            )
+
+     */
 
 // We attach a click lister to the canvas-element so that we can request a pointer lock.
 // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API
@@ -415,12 +441,9 @@ async function main(array, offset) {
             e.preventDefault();
         }
     });
+    let clock = new Clock();
 
-    let then = performance.now();
-
-    function loop(now) {
-
-
+    function loop() {
         /*
                 frameNumber += 0.05;
                 waterFrameBool++;
@@ -447,8 +470,7 @@ async function main(array, offset) {
                     waterImageNumber = 0;
                 }
         */
-        const delta = now - then;
-        then = now;
+        const delta = clock.getDelta();
 
         if (move.left) {
             cube.acceleration.x = -0.0001;
@@ -469,12 +491,17 @@ async function main(array, offset) {
         }
 
         if (move.jump) {
-            cube.acceleration.y = 0.22;
+            cube.acceleration.y = 0.001;
         } else {
-            cube.acceleration.y = 0;
+            cube.acceleration.y = -0.001;
+            cube.speed.y = 0;
         }
 
-        cube.running = move.run;
+        if (move.run) {
+            cube.running = true;
+        } else {
+            cube.running = false;
+        }
 
         // update controller rotation.
         mouseLookController.update(pitch, yaw);
@@ -483,33 +510,34 @@ async function main(array, offset) {
         pitch = 0;
 
         //// Physics Engine ////
-        physicsEngine.update(delta);
+        physicsEngine.update(delta * 1000);
 
         //*********Cloud Animate**********
         /*
-        cloudParticles.forEach(p => {
-            p.rotation.z -=0.002;
-        });
-*/
-        //********Rain Animate*********
-        /*
-        rainGeo.vertices.forEach(p=> {
-        p.velocity -= 0.1 + Math.randInt() * 0.1;
-        p.y += p.velocity;
-        if (p.y < -200) {
-            p.y = 200;
-            p.velocity = 0;
-        }
-        });
-        rainGeo.verticesNeedUpdate = true;
-*/
+                cloudParticles.forEach(p => {
+                    p.rotation.z -=0.002;
+                });
+
+                //********Rain Animate*********
+
+                rainGeo.vertices.forEach(p=> {
+                p.velocity -= 0.1 + Math.randInt() * 0.1;
+                p.y += p.velocity;
+                if (p.y < -200) {
+                    p.y = 200;
+                    p.velocity = 0;
+                }
+                });
+                rainGeo.verticesNeedUpdate = true;
+        */
         // render scene:
         renderer.render(scene, camera);
 
         requestAnimationFrame(loop);
 
-    }
-    loop(performance.now());
+    };
+
+    loop();
 }
 
 main();
