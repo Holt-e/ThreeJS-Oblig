@@ -1,6 +1,6 @@
 import {Quaternion, Vector3} from '../lib/three.module.js';
 
-export default class MouseLookController {
+export default class MouseYawController {
 
     constructor(camera) {
         

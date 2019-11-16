@@ -1,8 +1,11 @@
 "use strict";
 
+import {Vector3} from "./three.module.js";
+import {RAYCAST_HEIGHT, TERRAIN_SIZE} from "../main.js";
+
 /**
  * Collection of general purpose utilities.
- * oskarbraten
+ * oskarbraten, Joakim Andås Johesan
  */
 export default class Utilities {
 	/**
@@ -62,7 +65,29 @@ export default class Utilities {
         return data;
     }
 
+    static placeRock(raycaster, terrain) {
+        let x = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
+        let z = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
+
+        raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
+        let intersect = raycaster.intersectObject(terrain);
+        if (intersect.length > 0) {
+            return new Vector3(x, intersect[0].point.y, z)
+        } else {
+            return new Vector3(x, 30, z)
+        }
+    }
+
     static clamp(v, min, max) {
         return Math.min(Math.max(v, min), max);
     }
+
+    static getRnd(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    static getRndInt(min, max) {
+        return Math.floor(Math.random() * (max - min)) + min;
+    }
+
 }

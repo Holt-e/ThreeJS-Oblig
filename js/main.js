@@ -1,4 +1,5 @@
 import {
+    AmbientLight,
     BoxBufferGeometry,
     Clock,
     CubeTextureLoader,
@@ -27,28 +28,27 @@ import {
 import Utilities from './lib/Utilities.js';
 import PhysicsEngine from './lib/PhysicsEngine.js';
 import PhysicsObject from './lib/PhysicsObject.js';
-import MouseLookController from './controls/MouseLookController.js';
+import MouseYawController from './controls/MouseYawController.js';
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
-import MouseCameraController from "./controls/MouseCameraController.js";
-
+import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
+
+export const GRAVITY = -0.016;
+export const RAYCAST_HEIGHT = 50;
+export const GRASS_AMOUNT = 100;
+export const WATER_ANIMATION_ENABLE = false;
+export const SPEED_DECAY = 0.6;
+export const TERRAIN_SIZE = 100;
+export const ROCK_AMOUNT = 100;
 
 let rainDrop;
 let rainCount;
 let terrainGeometry;
 let physicsEngine;
 
-function getRnd(min, max) {
-    return Math.random() * (max - min) + min;
-}
-
-function getRndInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
-
 async function main(array, offset) {
-
+    const gltfLoader = new GLTFLoader();
     const textureLoader = new TextureLoader();
     const scene = new Scene();
 
@@ -80,6 +80,11 @@ async function main(array, offset) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new AmbientLight(0xffffff, 0.5);
+    ambientLight.position.y = 50;
+    scene.add(ambientLight);
+
     const pointLight = new DirectionalLight(0xffffff);
     pointLight.position.y = 100;
 
@@ -97,6 +102,7 @@ async function main(array, offset) {
 
     const geometry = new BoxBufferGeometry(1, 1, 1);
     const material = new MeshPhongMaterial({color: 0x00ff00});
+
     const cube = new PhysicsObject(geometry, material);
 
     physicsObjects.push(cube);
@@ -109,6 +115,8 @@ async function main(array, offset) {
     cube.add(camera);
 
     pointLight.target = cube;
+
+
     /**
      * Add terrain:
      *
@@ -120,26 +128,25 @@ async function main(array, offset) {
      */
 
 //// Terrain ////
-    Utilities.loadImage('resources/images/heightmap.png').then((heightmapImage) => {
+    Utilities.loadImage('resources/images/heightMap.png').then((heightmapImage) => {
 
-        const width = 100;
 
         terrainGeometry = new TerrainBufferGeometry({
-            width,
+            width: TERRAIN_SIZE,
             heightmapImage,
-            numberOfSubdivisions: 256,
-            height: 30
+            numberOfSubdivisions: 512,
+            height: 45
         });
 
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
         grassTexture.wrapT = RepeatWrapping;
-        grassTexture.repeat.set(1000 / width, 1000 / width);
+        grassTexture.repeat.set(1000 / TERRAIN_SIZE, 1000 / TERRAIN_SIZE);
 
         const snowyRockTexture = new TextureLoader().load('resources/textures/snowy_rock_01.png');
         snowyRockTexture.wrapS = RepeatWrapping;
         snowyRockTexture.wrapT = RepeatWrapping;
-        snowyRockTexture.repeat.set(1500 / width, 1500 / width);
+        snowyRockTexture.repeat.set(1500 / TERRAIN_SIZE, 1500 / TERRAIN_SIZE);
 
 
         const splatMap = new TextureLoader().load('resources/images/splatmap_01.png');
@@ -161,10 +168,10 @@ async function main(array, offset) {
 
         physicsEngine = new PhysicsEngine(physicsObjects, raycaster, terrain);
 
-        for (let i = 0; i < 100; i++) {
-            let j = new Sprite(gressMaterial[getRndInt(0, 3)]);
-            j.position.x = getRnd(-10, 10);
-            j.position.z = getRnd(-10, 10);
+        for (let i = 0; i < GRASS_AMOUNT; i++) {
+            let j = new Sprite(gressMaterial[Utilities.getRndInt(0, 3)]);
+            j.position.x = Utilities.getRnd(-10, 10);
+            j.position.z = Utilities.getRnd(-10, 10);
             raycaster.set(new Vector3(j.position.x, 50, j.position.z), new Vector3(0, -1, 0));
 
             let intersect = raycaster.intersectObject(terrain);
@@ -175,6 +182,39 @@ async function main(array, offset) {
 
             scene.add(j);
         }
+
+        gltfLoader.load(
+            "resources/models/Rock.glb",
+            (gltf) => {
+                let rock = gltf.scene.children[2];
+                console.log(rock);
+                for (let i = 0; i < ROCK_AMOUNT; i++) {
+                    let x = rock.clone();
+                    x.name = "rock" + i;
+                    x.rotation.z = Math.PI;
+                    x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
+                    x.position.copy(Utilities.placeRock(raycaster, terrain));
+                    scene.add(x);
+                }
+
+            },
+        );
+        gltfLoader.load(
+            "resources/models/Rock0.glb",
+            (gltf) => {
+                let rock = gltf.scene.children[2];
+                console.log(rock);
+                for (let i = 0; i < ROCK_AMOUNT; i++) {
+                    let x = rock.clone();
+                    x.name = "rock" + i + i;
+                    x.rotation.z = Math.PI;
+                    x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
+                    x.position.copy(Utilities.placeRock(raycaster, terrain));
+                    scene.add(x);
+                }
+
+            },
+        );
 
     });
 
@@ -229,7 +269,7 @@ async function main(array, offset) {
 
     for (let i = 0; i < 120; i++) {
         oceanDisplacementMap.push(new Texture(waterDisplacementMap[i], UVMapping, RepeatWrapping, RepeatWrapping));
-        oceanDisplacementMap[i].repeat.set(10, 10);
+        oceanDisplacementMap[i].repeat.set(2, 2);
         oceanDisplacementMap[i].needsUpdate = true;
 
     }
@@ -322,64 +362,25 @@ async function main(array, offset) {
     const far = 60;
     scene.fog = new Fog(color, near, far);
 
-    /**
-     * Set up camera controller:
-     */
+    //// LOADING OBJECTS ////
 
-    let mouseLookController = new MouseLookController(cube);
-    let mouseCameraController = new MouseCameraController(camera);
-
-            //// LOADING OBJECTS ////
-            // Instantiate a loader
-    var loader = new GLTFLoader();
-    loader.load(
-        "resources/models/firTree.gltf.glb",
+    gltfLoader.load(
+        "resources/models/scene.gltf",
         (gltf) => {
             let tree = gltf.scene.children[0];
-            console.log(tree);
-            tree.position.y = 20;
-            scene.add(tree);
+            //console.log(tree);
+            tree.scale.set(0.005, 0.005, 0.005);
+            tree.name = "car";
+            tree.rotation.z = Math.PI;
+            cube.add(tree);
         },
     );
+    /**
+     * Set up camera and cube controller:
+     */
 
-    /*
-        let materialLoader = new MTLLoader();
-
-        materialLoader.load(
-            'resources/models/firTree.mtl',
-            (material) => {
-
-                let loader = new OBJLoader();
-
-                loader.load(
-                    // resource URL
-                    'resources/models/firTree.obj',
-                    // called when the resource is loaded
-                    (object) => {
-
-                        loader.setMaterials(material);
-                        let treeMesh = object.children[0];
-                        treeMesh.position.y = 15;
-                        //object.scale(0.5,0.5,0.5);
-                        scene.add(treeMesh);
-
-                    },
-                    // called while loading is progressing
-                    function (xhr) {
-
-                        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-
-                    },
-                    // called when loading has errors
-                    function (error) {
-
-                        console.log('An error happened');
-
-                    })
-                }
-            )
-*/
-
+    let mouseYawController = new MouseYawController(cube);
+    let mousePitchController = new MousePitchController(camera);
 
 // We attach a click lister to the canvas-element so that we can request a pointer lock.
 // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API
@@ -459,59 +460,59 @@ async function main(array, offset) {
         }
     });
     let clock = new Clock();
-
+    let frameNumber = 0.0;
     function loop() {
-        /*
-                frameNumber += 0.05;
-                waterFrameBool++;
 
-                oceanOffset.x += 0.001 * Math.sin(frameNumber);
-                oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
+        if (WATER_ANIMATION_ENABLE) {
+            frameNumber += 0.05;
+            waterFrameBool++;
 
-               if (waterFrameBool === 4) {
-                    waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
-                    waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
-                    waterFrameBool = 0;
+            oceanOffset.x += 0.001 * Math.sin(frameNumber);
+            oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
 
-                }
-
-                waterMaterial.displacementMap.needsUpdate = true;
-                waterMaterial.displacementMap.offset = oceanOffset;
-
-               waterMaterial.normalMap.needsUpdate = true;
-                waterMaterial.normalMap.offset = oceanOffset;
+            waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
+            waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
 
 
-                waterImageNumber++;
-                if (waterImageNumber > 119) {
-                    waterImageNumber = 0;
-                }
-        */
+            waterMaterial.displacementMap.needsUpdate = true;
+            waterMaterial.displacementMap.offset = oceanOffset;
+
+            waterMaterial.normalMap.needsUpdate = true;
+            waterMaterial.normalMap.offset = oceanOffset;
+
+
+            waterImageNumber++;
+            if (waterImageNumber > 119) {
+                waterImageNumber = 0;
+            }
+        }
+
+
         const delta = clock.getDelta();
 
         if (move.left) {
-            cube.acceleration.x = -0.0001;
+            cube.acceleration.x += -0.0001;
         } else if (move.right) {
-            cube.acceleration.x = 0.0001;
+            cube.acceleration.x += 0.0001;
         } else {
             cube.acceleration.x = 0;
-            cube.speed.x = 0;
+            cube.speed.x = cube.speed.x * SPEED_DECAY;
         }
 
         if (move.forward) {
-            cube.acceleration.z = -0.0001;
+            cube.acceleration.z += -0.0001;
         } else if (move.backward) {
-            cube.acceleration.z = 0.0001;
+            cube.acceleration.z += 0.0001;
         } else {
             cube.acceleration.z = 0;
-            cube.speed.z = 0;
+            cube.speed.z = cube.speed.z * SPEED_DECAY;
         }
 
         if (move.jump) {
-            cube.acceleration.y = 0.001;
+            cube.acceleration.y += 0.0001;
         } else {
-            cube.acceleration.y = -0.001;
-            cube.speed.y = 0;
+            cube.acceleration.y = 0;
+            cube.speed.y = cube.speed.y * SPEED_DECAY;
         }
 
         if (move.run) {
@@ -521,8 +522,8 @@ async function main(array, offset) {
         }
 
         // update controller rotation.
-        mouseLookController.update(yaw);
-        mouseCameraController.update(pitch);
+        mouseYawController.update(yaw);
+        mousePitchController.update(pitch);
 
         yaw = 0;
         pitch = 0;
@@ -548,6 +549,7 @@ async function main(array, offset) {
                 });
                 rainGeo.verticesNeedUpdate = true;
         */
+
         // render scene:
         renderer.render(scene, camera);
 
