@@ -78,6 +78,18 @@ export default class Utilities {
         }
     }
 
+    static placeTree(raycaster, terrain) {
+        let x = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
+        let z = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
+
+        raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
+        let intersect = raycaster.intersectObject(terrain);
+        if (intersect.length > 0) {
+            return new Vector3(x, 70 + intersect[0].point.y, z)
+        } else {
+            return new Vector3(x, 30, z)
+        }
+    }
     static clamp(v, min, max) {
         return Math.min(Math.max(v, min), max);
     }

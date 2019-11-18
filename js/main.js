@@ -36,11 +36,12 @@ import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 export const GRAVITY = -0.016;
 export const RAYCAST_HEIGHT = 50;
-export const GRASS_AMOUNT = 200;
+export const GRASS_AMOUNT = 100;
 export const WATER_ANIMATION_ENABLE = false;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 200;
-export const ROCK_AMOUNT = 100;
+export const ROCK_AMOUNT = 50;
+export const TREE_AMOUNT = 50;
 
 let rainDrop;
 let rainCount;
@@ -182,6 +183,23 @@ async function main(array, offset) {
 
             scene.add(j);
         }
+        gltfLoader.load(
+            "resources/models/fir.glb",
+            (gltf) => {
+                let rock = gltf.scene.children[2];
+                console.log(rock);
+                for (let i = 0; i < TREE_AMOUNT; i++) {
+                    let x = rock.clone();
+                    x.castShadow = true;
+                    x.name = "firTree" + i;
+                    x.rotation.z = Math.PI;
+                    x.scale.set(1, 1, 1);
+                    x.position.copy(Utilities.placeTree(raycaster, terrain));
+                    scene.add(x);
+                }
+
+            },
+        );
 
         gltfLoader.load(
             "resources/models/Rock.glb",
