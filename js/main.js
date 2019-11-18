@@ -36,10 +36,10 @@ import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 export const GRAVITY = -0.016;
 export const RAYCAST_HEIGHT = 50;
-export const GRASS_AMOUNT = 100;
+export const GRASS_AMOUNT = 200;
 export const WATER_ANIMATION_ENABLE = false;
 export const SPEED_DECAY = 0.6;
-export const TERRAIN_SIZE = 100;
+export const TERRAIN_SIZE = 200;
 export const ROCK_AMOUNT = 100;
 
 let rainDrop;
@@ -100,14 +100,12 @@ async function main(array, offset) {
 
     let physicsObjects = [];
 
-    const geometry = new BoxBufferGeometry(1, 1, 1);
-    const material = new MeshPhongMaterial({color: 0x00ff00});
+    const geometry = new BoxBufferGeometry(1, 0.3, 1);
+    const material = new MeshPhongMaterial({color: 0x000000});
 
     const cube = new PhysicsObject(geometry, material);
 
     physicsObjects.push(cube);
-
-    cube.castShadow = true;
 
     scene.add(cube);
     camera.position.y = 5;
@@ -170,8 +168,10 @@ async function main(array, offset) {
 
         for (let i = 0; i < GRASS_AMOUNT; i++) {
             let j = new Sprite(gressMaterial[Utilities.getRndInt(0, 3)]);
-            j.position.x = Utilities.getRnd(-10, 10);
-            j.position.z = Utilities.getRnd(-10, 10);
+            j.scale.set(6, 6, 6);
+            let grassPos = TERRAIN_SIZE / 2
+            j.position.x = Utilities.getRnd(-grassPos, grassPos);
+            j.position.z = Utilities.getRnd(-grassPos, grassPos);
             raycaster.set(new Vector3(j.position.x, 50, j.position.z), new Vector3(0, -1, 0));
 
             let intersect = raycaster.intersectObject(terrain);
@@ -190,6 +190,7 @@ async function main(array, offset) {
                 console.log(rock);
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
+                    x.castShadow = true;
                     x.name = "rock" + i;
                     x.rotation.z = Math.PI;
                     x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
@@ -200,12 +201,13 @@ async function main(array, offset) {
             },
         );
         gltfLoader.load(
-            "resources/models/Rock0.glb",
+            "resources/models/Rock1.glb",
             (gltf) => {
                 let rock = gltf.scene.children[2];
                 console.log(rock);
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
+                    x.castShadow = true;
                     x.name = "rock" + i + i;
                     x.rotation.z = Math.PI;
                     x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
@@ -372,6 +374,7 @@ async function main(array, offset) {
             tree.scale.set(0.005, 0.005, 0.005);
             tree.name = "car";
             tree.rotation.z = Math.PI;
+            tree.castShadow = true;
             cube.add(tree);
         },
     );
