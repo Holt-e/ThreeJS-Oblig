@@ -70,9 +70,9 @@ export default class Utilities {
         let z = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
 
         raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
-        let intersect = raycaster.intersectObject(terrain);
+        let intersect = raycaster.intersectObject(terrain, true);
         if (intersect.length > 0) {
-            return new Vector3(x, intersect[0].point.y, z)
+            return new Vector3(x, intersect[0].point.y + 0.5, z)
         } else {
             return new Vector3(x, 30, z)
         }
@@ -83,9 +83,9 @@ export default class Utilities {
         let z = this.getRnd(-TERRAIN_SIZE / 2, TERRAIN_SIZE / 2);
 
         raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
-        let intersect = raycaster.intersectObject(terrain);
+        let intersect = raycaster.intersectObject(terrain, true);
         if (intersect.length > 0) {
-            return new Vector3(x, 70 + intersect[0].point.y, z)
+            return new Vector3(x, 70 + intersect[0].point.y + 0.5, z)
         } else {
             return new Vector3(x, 30, z)
         }

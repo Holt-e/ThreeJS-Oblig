@@ -17,7 +17,7 @@ export default class PhysicsEngine {
 
     getGroundHeight(p) {
         this.raycaster.set(new Vector3(p.position.x, RAYCAST_HEIGHT, p.position.z), new Vector3(0, -1, 0));
-        let intersect = this.raycaster.intersectObject(this.terrain);
+        let intersect = this.raycaster.intersectObject(this.terrain, true);
         if (intersect.length > 0) {
             return intersect[0].point.y;
         } else {
@@ -39,8 +39,10 @@ export default class PhysicsEngine {
                 p.acceleration.x = 0;
                 p.acceleration.z = 0;
             */
+            if (p.acceleration.y === 0) {
+                p.acceleration.y = GRAVITY;
+            }
 
-            p.acceleration.y = GRAVITY;
             /*
                         p.acceleration.x = Utilities.clamp(p.acceleration.x, -p.maxAcceleration, p.maxAcceleration);
                         p.acceleration.z = Utilities.clamp(p.acceleration.z, -p.maxAcceleration, p.maxAcceleration);

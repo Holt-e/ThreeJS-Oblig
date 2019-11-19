@@ -15,12 +15,12 @@ import {
     Raycaster,
     RepeatWrapping,
     Scene,
+    SpotLight,
     Sprite,
     SpriteMaterial,
     Texture,
     TextureLoader,
     UVMapping,
-    Vector2,
     Vector3,
     WebGLRenderer
 } from './lib/three.module.js';
@@ -35,13 +35,16 @@ import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 export const GRAVITY = -0.016;
-export const RAYCAST_HEIGHT = 50;
+export const RAYCAST_HEIGHT = 1000;
 export const GRASS_AMOUNT = 100;
-export const WATER_ANIMATION_ENABLE = false;
+export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
-export const TERRAIN_SIZE = 200;
+export const TERRAIN_SIZE = 1000;
 export const ROCK_AMOUNT = 50;
 export const TREE_AMOUNT = 50;
+export const FOG_ENABLE = true;
+export const FOG_START = 100;
+export const FOG_END = 500;
 
 let rainDrop;
 let rainCount;
@@ -50,7 +53,6 @@ let physicsEngine;
 
 async function main(array, offset) {
     const gltfLoader = new GLTFLoader();
-    const textureLoader = new TextureLoader();
     const scene = new Scene();
 
     const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -82,21 +84,19 @@ async function main(array, offset) {
     renderer.shadowMap.type = PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new AmbientLight(0xffffff, 0.5);
-    ambientLight.position.y = 50;
+    const ambientLight = new AmbientLight(0xffaaaa, 0.2);
     scene.add(ambientLight);
 
     const pointLight = new DirectionalLight(0xffffff);
-    pointLight.position.y = 100;
-
+    pointLight.position.y = 500;
+    pointLight.position.z = 200;
+    pointLight.position.z = -200;
     pointLight.castShadow = true;
-
 //Set up shadow properties for the light
     pointLight.shadow.mapSize.width = 1024;  // default
     pointLight.shadow.mapSize.height = 1024; // default
     pointLight.shadow.camera.near = 0.5;    // default
-    pointLight.shadow.camera.far = 500;     // default
-
+    pointLight.shadow.camera.far = 1000;     // default
     scene.add(pointLight);
 
     let physicsObjects = [];
@@ -109,6 +109,13 @@ async function main(array, offset) {
     physicsObjects.push(cube);
 
     scene.add(cube);
+
+    const headLight = new SpotLight(0xffcccc, 1, 20, Math.PI / 4);
+    headLight.position.y = 2;
+    headLight.position.z = -2;
+    headLight.target.position.z = -20;
+    cube.add(headLight);
+    cube.add(headLight.target);
     camera.position.y = 5;
     camera.position.z = 5;
     cube.add(camera);
@@ -127,28 +134,28 @@ async function main(array, offset) {
      */
 
 //// Terrain ////
-    Utilities.loadImage('resources/images/heightMap.png').then((heightmapImage) => {
+    Utilities.loadImage('resources/images/heightMap0.png').then((heightmapImage) => {
 
 
         terrainGeometry = new TerrainBufferGeometry({
             width: TERRAIN_SIZE,
             heightmapImage,
-            numberOfSubdivisions: 512,
-            height: 45
+            numberOfSubdivisions: 256,
+            height: 100
         });
 
         const grassTexture = new TextureLoader().load('resources/textures/grass_01.jpg');
         grassTexture.wrapS = RepeatWrapping;
         grassTexture.wrapT = RepeatWrapping;
-        grassTexture.repeat.set(1000 / TERRAIN_SIZE, 1000 / TERRAIN_SIZE);
+        grassTexture.repeat.set(100000 / TERRAIN_SIZE, 100000 / TERRAIN_SIZE);
 
-        const snowyRockTexture = new TextureLoader().load('resources/textures/snowy_rock_01.png');
+        const snowyRockTexture = new TextureLoader().load('resources/textures/rockMoss.png');
         snowyRockTexture.wrapS = RepeatWrapping;
         snowyRockTexture.wrapT = RepeatWrapping;
-        snowyRockTexture.repeat.set(1500 / TERRAIN_SIZE, 1500 / TERRAIN_SIZE);
+        snowyRockTexture.repeat.set(100000 / TERRAIN_SIZE, 100000 / TERRAIN_SIZE);
 
 
-        const splatMap = new TextureLoader().load('resources/images/splatmap_01.png');
+        const splatMap = new TextureLoader().load('resources/images/splatMap.png');
 
         const terrainMaterial = new TextureSplattingMaterial({
             color: 0x777777,
@@ -162,7 +169,6 @@ async function main(array, offset) {
         terrain.castShadow = true;
         terrain.receiveShadow = true;
         terrain.name = "terrain";
-        console.log(terrain)
         scene.add(terrain);
 
         physicsEngine = new PhysicsEngine(physicsObjects, raycaster, terrain);
@@ -170,27 +176,26 @@ async function main(array, offset) {
         for (let i = 0; i < GRASS_AMOUNT; i++) {
             let j = new Sprite(gressMaterial[Utilities.getRndInt(0, 3)]);
             j.scale.set(6, 6, 6);
-            let grassPos = TERRAIN_SIZE / 2
+            let grassPos = TERRAIN_SIZE / 2;
             j.position.x = Utilities.getRnd(-grassPos, grassPos);
             j.position.z = Utilities.getRnd(-grassPos, grassPos);
-            raycaster.set(new Vector3(j.position.x, 50, j.position.z), new Vector3(0, -1, 0));
+            raycaster.set(new Vector3(j.position.x, RAYCAST_HEIGHT, j.position.z), new Vector3(0, -1, 0));
 
-            let intersect = raycaster.intersectObject(terrain);
+            let intersect = raycaster.intersectObject(terrain, true);
             if (intersect.length > 0) {
                 j.position.y = intersect[0].point.y + 0.5;
             }
-
-
             scene.add(j);
         }
+        //// Loading in trees ////
         gltfLoader.load(
             "resources/models/fir.glb",
             (gltf) => {
-                let rock = gltf.scene.children[2];
-                console.log(rock);
+                let firTree = gltf.scene.children[2];
                 for (let i = 0; i < TREE_AMOUNT; i++) {
-                    let x = rock.clone();
+                    let x = firTree.clone();
                     x.castShadow = true;
+                    x.receiveShadow = true;
                     x.name = "firTree" + i;
                     x.rotation.z = Math.PI;
                     x.scale.set(1, 1, 1);
@@ -209,15 +214,17 @@ async function main(array, offset) {
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
                     x.castShadow = true;
+                    x.receiveShadow = true;
                     x.name = "rock" + i;
                     x.rotation.z = Math.PI;
-                    x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
+                    x.scale.copy(new Vector3(Utilities.getRnd(1, 5), Utilities.getRnd(1, 5), Utilities.getRnd(1, 5)));
                     x.position.copy(Utilities.placeRock(raycaster, terrain));
                     scene.add(x);
                 }
 
             },
         );
+
         gltfLoader.load(
             "resources/models/Rock1.glb",
             (gltf) => {
@@ -226,9 +233,10 @@ async function main(array, offset) {
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
                     x.castShadow = true;
+                    x.receiveShadow = true;
                     x.name = "rock" + i + i;
                     x.rotation.z = Math.PI;
-                    x.scale.copy(new Vector3(Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 2), Utilities.getRnd(0.5, 1)));
+                    x.scale.copy(new Vector3(Utilities.getRnd(1, 5), Utilities.getRnd(1, 5), Utilities.getRnd(1, 5)));
                     x.position.copy(Utilities.placeRock(raycaster, terrain));
                     scene.add(x);
                 }
@@ -244,14 +252,14 @@ async function main(array, offset) {
     let raycaster = new Raycaster(new Vector3(0, 50, 0), new Vector3(0, -1, 0));
 
     const gressMaterial = [];
+    let textureLoader = new TextureLoader();
     for (let i = 0; i < 3; i++) {
-        let gressSprite = new TextureLoader().load(`resources/textures/grassSprite${i.toString()}.png`)
+        let gressSprite = textureLoader.load(`resources/textures/grassSprite${i.toString()}.png`);
         gressMaterial.push(new SpriteMaterial({
             map: gressSprite,
             side: DoubleSide,
             transparent: true,
         }));
-
     }
 
 //// ENV MAP ////
@@ -268,8 +276,6 @@ async function main(array, offset) {
     scene.background = environmentMap;
 
 //// WATER ////
-
-    let oceanOffset = new Vector2(0.01, 0.001);
 //Loading textures
 
 
@@ -293,17 +299,15 @@ async function main(array, offset) {
         oceanDisplacementMap[i].needsUpdate = true;
 
     }
-
-    let texLoadOcaen = textureLoader.load('resources/textures/waterAnimated/0001.png');
     let waterMaterial = new MeshStandardMaterial({
         transparent: true,
         opacity: 0.6,
-        color: 0x7399c7,
+        color: 0x7399c9,
         metalness: 0.3,
         refractionRatio: 0.75,
 
         roughness: 0.1,
-        envMapIntensity: 1.5,
+        envMapIntensity: 1,
         displacementMap: oceanDisplacementMap[0],
         displacementScale: 1,
         normalMap: oceanDisplacementMap[0],
@@ -315,11 +319,11 @@ async function main(array, offset) {
 
 
     const water = new Mesh(waterGeometry, waterMaterial);
-    water.position.y = 6;
+    water.scale.set(5, 5, 5);
+    water.position.y = 15;
+    water.position.z = -160;
+    water.position.x = -160;
     water.rotation.x = -Math.PI / 2;
-    water.castShadow = true;
-    water.receiveShadow = true;
-
     scene.add(water);
 
 //************Clouds**********
@@ -376,11 +380,11 @@ async function main(array, offset) {
         scene.add(rain);
     */
 //// FOG ////
+    if (FOG_ENABLE) {
+        const color = 0x6c7c8a;
+        scene.fog = new Fog(color, FOG_START, FOG_END);
+    }
 
-    const color = 0x6c7c8a;  // white
-    const near = 30;
-    const far = 60;
-    scene.fog = new Fog(color, near, far);
 
     //// LOADING OBJECTS ////
 
@@ -393,6 +397,7 @@ async function main(array, offset) {
             tree.name = "car";
             tree.rotation.z = Math.PI;
             tree.castShadow = true;
+            tree.receiveShadow = true;
             cube.add(tree);
         },
     );
@@ -480,26 +485,22 @@ async function main(array, offset) {
             e.preventDefault();
         }
     });
+
     let clock = new Clock();
-    let frameNumber = 0.0;
+
     function loop() {
 
         if (WATER_ANIMATION_ENABLE) {
-            frameNumber += 0.05;
-            waterFrameBool++;
 
-            oceanOffset.x += 0.001 * Math.sin(frameNumber);
-            oceanOffset.y += 0.0007 * Math.sin(-frameNumber);
+            waterFrameBool++;
 
             waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
             waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
 
 
             waterMaterial.displacementMap.needsUpdate = true;
-            waterMaterial.displacementMap.offset = oceanOffset;
 
             waterMaterial.normalMap.needsUpdate = true;
-            waterMaterial.normalMap.offset = oceanOffset;
 
 
             waterImageNumber++;
@@ -530,7 +531,7 @@ async function main(array, offset) {
         }
 
         if (move.jump) {
-            cube.acceleration.y += 0.0001;
+            cube.acceleration.y += 0.001;
         } else {
             cube.acceleration.y = 0;
             cube.speed.y = cube.speed.y * SPEED_DECAY;
