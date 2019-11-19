@@ -18,14 +18,24 @@ import {
     SpotLight,
     Sprite,
     SpriteMaterial,
+    BufferGeometry,
+    VertexColors,
     Texture,
     TextureLoader,
+    PlaneBufferGeometry,
     UVMapping,
+    Float32BufferAttribute,
+    MeshBasicMaterial,
+    Points,
+    Color,
     Vector3,
+    Geometry,
+    PointsMaterial,
     WebGLRenderer
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
+import Stats from './lib/stats.module.js';
 import PhysicsEngine from './lib/PhysicsEngine.js';
 import PhysicsObject from './lib/PhysicsObject.js';
 import MouseYawController from './controls/MouseYawController.js';
@@ -33,6 +43,7 @@ import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
+
 
 export const GRAVITY = -0.016;
 export const RAYCAST_HEIGHT = 1000;
@@ -48,6 +59,7 @@ export const FOG_END = 500;
 
 let rainDrop;
 let rainCount;
+let stats;
 let terrainGeometry;
 let physicsEngine;
 
@@ -247,6 +259,29 @@ async function main(array, offset) {
     });
 
 
+    //*******Trails********//
+
+    let colorArray = [ new Color( 0xff0080 ), new Color( 0xffffff ), new Color( 0x8000ff ) ];
+    let positions = [];
+    let colors = [];
+
+    for ( let i = 0; i < 100; i ++ ) {
+        positions.push( Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5 );
+        let clr = colorArray[ Math.floor( Math.random() * colorArray.length ) ];
+        colors.push( clr.r, clr.g, clr.b );
+    }
+
+    let geometrytrail = new BufferGeometry();
+    geometrytrail.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+    geometrytrail.setAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+    let materialtrail = new PointsMaterial( { size: 4, vertexColors: VertexColors, depthTest: false, sizeAttenuation: false } );
+    let mesh = new Points( geometrytrail, materialtrail );
+
+    scene.add( mesh );
+
+    stats = new Stats();
+
 //// Gress Sprites ////
 
     let raycaster = new Raycaster(new Vector3(0, 50, 0), new Vector3(0, -1, 0));
@@ -327,31 +362,31 @@ async function main(array, offset) {
     scene.add(water);
 
 //************Clouds**********
-    /*
+
             let cloudParticles = [];
             let cloudLoader = new TextureLoader();
             cloudLoader.load(
                 'resources/images/smoke1.png',
                 (texture) => {
 
-
-                let cloudGeo = new PlaneBufferGeometry(500,500);
+                let cloudGeo = new PlaneBufferGeometry(1000,500);
                 let cloudMaterial = new MeshBasicMaterial({
                     map: texture,
                     transparent: true,
 
+
                 });
-                for(let p=0; p<60; p++) {
+                for(let p=0; p<100; p++) {
                     let cloud = new Mesh(cloudGeo,cloudMaterial);
                     cloud.position.set(
-                        Math.randInt() *800 -400,
+                        Math.random() *800 -400,
                         500,
-                        Math.randInt() *500 - 450
+                        Math.random() *400 - 450
                     );
-                    cloud.rotation.x = 1.16;
-                    cloud.rotation.y = -0.12;
-                    cloud.rotation.z = Math.randInt() *360;
-                    cloud.material.opacity = 0.6;
+                    cloud.rotation.x = 1.10;
+                    cloud.rotation.y = -0.10;
+                    cloud.rotation.z = Math.random() *360;
+                    cloud.material.opacity = 0.9;
                     cloudParticles.push(cloud);
                     scene.add(cloud);
                 }
@@ -378,7 +413,7 @@ async function main(array, offset) {
         });
         let rain = new Points(rainGeo,rainMaterial);
         scene.add(rain);
-    */
+
 //// FOG ////
     if (FOG_ENABLE) {
         const color = 0x6c7c8a;
@@ -552,9 +587,11 @@ async function main(array, offset) {
 
         //// Physics Engine ////
         physicsEngine.update(delta * 1000);
+//********Trails********//
+        stats.update();
 
         //*********Cloud Animate**********
-        /*
+
                 cloudParticles.forEach(p => {
                     p.rotation.z -=0.002;
                 });
@@ -562,7 +599,7 @@ async function main(array, offset) {
                 //********Rain Animate*********
 
                 rainGeo.vertices.forEach(p=> {
-                p.velocity -= 0.1 + Math.randInt() * 0.1;
+                p.velocity -= 0.1 + Math.random() * 0.1;
                 p.y += p.velocity;
                 if (p.y < -200) {
                     p.y = 200;
@@ -570,14 +607,14 @@ async function main(array, offset) {
                 }
                 });
                 rainGeo.verticesNeedUpdate = true;
-        */
 
         // render scene:
+        mesh.rotation.y = Date.now() / 1000;
         renderer.render(scene, camera);
 
         requestAnimationFrame(loop);
 
-    };
+    }
 
     loop();
 }
