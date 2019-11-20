@@ -32,7 +32,11 @@ import {
     UVMapping,
     Vector3,
     VertexColors,
-    WebGLRenderer
+    RawShaderMaterial,
+    InstancedBufferGeometry,
+    WebGLRenderer,
+    InstancedBufferAttribute,
+    Vector4,
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -43,7 +47,11 @@ import MouseYawController from './controls/MouseYawController.js';
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MousePitchController from "./controls/MousePitchController.js";
+import paperplane_vertex from './materials/Paperplanes.js';
+import paperplane_fragment from './materials/Paperplanes.js';
+import { GUI } from './lib/dat.gui.module.js';
 import {GLTFLoader} from './loaders/GLTFLoader.js';
+import Paperplanes from "./materials/Paperplanes.js";
 
 
 export const GRAVITY = -0.005;
@@ -304,18 +312,18 @@ async function main(array, offset) {
     //*******Trails********//
 
     let colorArray = [ new Color( 0xff0080 ), new Color( 0xffffff ), new Color( 0x8000ff ) ];
-    let positions = [];
-    let colors = [];
+    let positionsTrails = [];
+    let colorsTrails = [];
 
     for ( let i = 0; i < 100; i ++ ) {
-        positions.push( Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5 );
+        positionsTrails.push( Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5 );
         let clr = colorArray[ Math.floor( Math.random() * colorArray.length ) ];
-        colors.push( clr.r, clr.g, clr.b );
+        colorsTrails.push( clr.r, clr.g, clr.b );
     }
 
     let geometrytrail = new BufferGeometry();
-    geometrytrail.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
-    geometrytrail.setAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+    geometrytrail.setAttribute( 'position', new Float32BufferAttribute( positionsTrails, 3 ) );
+    geometrytrail.setAttribute( 'color', new Float32BufferAttribute( colorsTrails, 3 ) );
 
     let materialtrail = new PointsMaterial( { size: 4, vertexColors: VertexColors, depthTest: false, sizeAttenuation: false } );
     let mesh = new Points( geometrytrail, materialtrail );
@@ -437,9 +445,9 @@ async function main(array, offset) {
         let rainGeo = new Geometry();
         for(let i= 0 ; i>rainCount; i++) {
             rainDrop = new Vector3(
-                Math.randInt() * 400 - 200,
-                Math.randInt() * 500 - 250,
-                Math.randInt() * 400 - 200,
+                Math.random() * 400 - 200,
+                Math.random() * 500 - 250,
+                Math.random() * 400 - 200,
             );
             rainDrop.velocity = {};
             rainDrop.velocity = 0;
@@ -460,6 +468,57 @@ async function main(array, offset) {
         scene.fog = new Fog(color, FOG_START, FOG_END);
     }
 
+    //*****Paperplane Shader******
+    // geometry
+    let vector = new Vector4();
+    let instancesPP = 50000;
+    let positionsPP = [];
+    let offsets = [];
+    let colorsPP = [];
+    let orientationsStart = [];
+    let orientationsEnd = [];
+    positionsPP.push( 0.025, - 0.025, 0 );
+    positionsPP.push( - 0.025, 0.025, 0 );
+    positionsPP.push( 0, 0, 0.025 );
+    // instanced attributes
+    for ( let i = 0; i < instancesPP; i ++ ) {
+        // offsets
+        offsets.push( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 );
+        // colors
+        colorsPP.push( Math.random(), Math.random(), Math.random(), Math.random() );
+        // orientation start
+        vector.set( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
+        vector.normalize();
+        orientationsStart.push( vector.x, vector.y, vector.z, vector.w );
+        // orientation end
+        vector.set( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
+        vector.normalize();
+        orientationsEnd.push( vector.x, vector.y, vector.z, vector.w );
+    }
+    let PPgeometry = new InstancedBufferGeometry();
+    PPgeometry.maxInstancedCount = instancesPP; // set so its initalized for dat.GUI, will be set in first draw otherwise
+    PPgeometry.setAttribute( 'position', new Float32BufferAttribute( positionsPP, 3 ) );
+    PPgeometry.setAttribute( 'offset', new InstancedBufferAttribute( new Float32Array( offsets ), 3 ) );
+    PPgeometry.setAttribute( 'color', new InstancedBufferAttribute( new Float32Array( colorsPP ), 4 ) );
+    PPgeometry.setAttribute( 'orientationStart', new InstancedBufferAttribute( new Float32Array( orientationsStart ), 4 ) );
+    PPgeometry.setAttribute( 'orientationEnd', new InstancedBufferAttribute( new Float32Array( orientationsEnd ), 4 ) );
+    // material
+    let PPmaterial = new Paperplanes( {
+        uniforms: {
+            "time": { value: 1.0 },
+            "sineTime": { value: 1.0 }
+        },
+        vertexShader: paperplane_vertex,
+        fragmentShader: paperplane_fragment,
+        side: DoubleSide,
+        transparent: true
+    } );
+    //
+    let PPmesh = new Mesh( PPgeometry, PPmaterial );
+    scene.add( PPmesh );
+    //
+    stats = new Stats();
+    //
 
     //// LOADING OBJECTS ////
 
@@ -637,21 +696,20 @@ async function main(array, offset) {
                 });
 
                 //********Rain Animate*********
+        rainGeo.vertices.forEach(p=> {
+            p.velocity -= 0.1 + Math.random() * 0.1;
+            p.y += p.velocity;
+            if (p.y < -200) {
+                p.y = 200;
+                p.velocity = 0;
+            }
+        });
+        rainGeo.verticesNeedUpdate = true;
 
-                rainGeo.vertices.forEach(p=> {
-                p.velocity -= 0.1 + Math.random() * 0.1;
-                p.y += p.velocity;
-                if (p.y < -200) {
-                    p.y = 200;
-                    p.velocity = 0;
-                }
-                });
-                rainGeo.verticesNeedUpdate = true;
 
         // render scene:
         mesh.rotation.y = Date.now() / 1000;
         renderer.render(scene, camera);
-
         requestAnimationFrame(loop);
 
     }
