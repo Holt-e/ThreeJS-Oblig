@@ -32,6 +32,7 @@ import {
     TextureLoader,
     UVMapping,
     Vector3,
+    ShaderMaterial,
     Vector4,
     VertexColors,
     WebGLRenderer,
@@ -157,6 +158,18 @@ async function main(array, offset) {
      * An alternative way to handle asynchronous functions is async/await
      *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
      */
+    let shader1material = new ShaderMaterial({
+        uniforms: [],
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent
+    });
+
+    var cubeGeometry = new BoxBufferGeometry(100, 100, 100, 10, 10, 10);
+    var cubemesh = new Mesh(cubeGeometry, shader1material);
+    cubemesh.position.z = 500;
+    cubemesh.position.x = 100;
+    cubemesh.position.y = 200;
+    scene.add(cubemesh);
 
 //// Terrain ////
     Utilities.loadImage('resources/images/heightMap0.png').then((heightmapImage) => {
