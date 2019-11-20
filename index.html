@@ -17,15 +17,38 @@
 
 <body>
     <script type="module" src="js/main.js"></script>
-    <script type="x-shader/x-vertex" id="vertexShader">
+    <!-- Shader 1-->
+    <script type="x-shader/x-vertex" id="vertexShader1">
         void main(){
             vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * modelViewPosition;
     }
     </script>
-    <script type="x-shader/x-fragment" id="fragmentShader">
+    <script type="x-shader/x-fragment" id="fragmentShader1">
         void main() {
-            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+        }
+    </script>
+<!-- Shader 2-->
+    <script type="x-shader/x-vertex" id="vertexShader2">
+        varying vec2 vUv;
+        void main()
+        {
+            vUv = uv;
+            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    </script>
+    <script type="x-shader/x-fragment" id="fragmentShader2">
+
+        uniform float time;
+        varying vec2 vUv;
+        void main( void ) {
+            vec2 position = - 1.0 + 2.0 * vUv;
+            float red = abs( sin( position.x * position.y + time / 5.0 ) );
+            float green = abs( sin( position.x * position.y + time / 4.0 ) );
+            float blue = abs( sin( position.x * position.y + time / 3.0 ) );
+            gl_FragColor = vec4( red, green, blue, 1.0 );
         }
     </script>
 </body>

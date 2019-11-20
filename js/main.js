@@ -16,6 +16,7 @@ import {
     MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
+    NearestFilter,
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneBufferGeometry,
@@ -33,8 +34,10 @@ import {
     UVMapping,
     Vector3,
     Vector4,
+    Shape,
     VertexColors,
     WebGLRenderer,
+    ExtrudeBufferGeometry,
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -157,18 +160,63 @@ async function main(array, offset) {
      * An alternative way to handle asynchronous functions is async/await
      *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
      */
+
+
+        //******Custom Uniform for shader2******
+    const customUniforms = {
+            "time": { value: 1.0 }
+        };
+
+    //*********Settings for ExtrudeBufferGeometry
+    let extrudeShape = new Shape();
+    extrudeShape.moveTo( 0,0 );
+    extrudeShape.lineTo( 0, 6 );
+    extrudeShape.lineTo( 10, 6 );
+    extrudeShape.lineTo( 10, 0 );
+    extrudeShape.lineTo( 0, 0 );
+
+    let extrudeBufferSettings = {
+        steps: 2,
+        depth: 16,
+        bevelEnabled: true,
+        bevelThickness: 3,
+        bevelSize: 3,
+        bevelOffset: 0,
+        bevelSegments: 3
+    };
+
+    //**********Shader Materials Cube***********
+
     let shader1material = new ShaderMaterial({
-        uniforms: [],
-        vertexShader: document.getElementById('vertexShader').textContent,
-        fragmentShader: document.getElementById('fragmentShader').textContent
+        uniforms: customUniforms,
+        vertexShader: document.getElementById('vertexShader2').textContent,
+        fragmentShader: document.getElementById('fragmentShader2').textContent
     });
 
-    var cubeGeometry = new BoxBufferGeometry(100, 100, 100, 10, 10, 10);
-    var cubemesh = new Mesh(cubeGeometry, shader1material);
-    cubemesh.position.z = 500;
-    cubemesh.position.x = 100;
-    cubemesh.position.y = 200;
+    let cubeGeometry = new ExtrudeBufferGeometry(extrudeShape, extrudeBufferSettings);
+    let cubemesh = new Mesh(cubeGeometry, shader1material);
+    cubemesh.position.z = 130;
+    cubemesh.position.x = 50;
+    cubemesh.position.y = 120;
     scene.add(cubemesh);
+
+
+
+    //************Shader Materials************
+
+    let shader2material = new ShaderMaterial({
+        uniforms: customUniforms,
+        vertexShader: document.getElementById('vertexShader2').textContent,
+        fragmentShader: document.getElementById('fragmentShader2').textContent
+    });
+    var Cube2geometry = new BoxBufferGeometry( 8, 8, 8,8,8 );
+    var Cube2mesh = new Mesh( Cube2geometry, shader2material );
+    Cube2mesh.position.x = 50;
+    Cube2mesh.position.y = 120;
+    Cube2mesh.position.z = 100;
+    scene.add( Cube2mesh );
+
+
 
 //// Terrain ////
     Utilities.loadImage('resources/images/heightMap0.png').then((heightmapImage) => {
@@ -640,7 +688,7 @@ async function main(array, offset) {
 
     let clock = new Clock();
 
-    function loop() {
+    function loop(time) {
 
         if (WATER_ANIMATION_ENABLE) {
 
@@ -721,6 +769,9 @@ async function main(array, offset) {
         rainGeo.verticesNeedUpdate = true;
         rain.rotation.y += 0.002;
 
+        //*******CubeInstance Animate
+
+        customUniforms[ "time" ].value += delta * 5;
 
         // render scene:
         mesh.rotation.y = Date.now() / 1000;
