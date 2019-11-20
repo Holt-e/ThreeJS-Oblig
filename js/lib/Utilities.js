@@ -98,6 +98,7 @@ export default class Utilities {
             return new Vector3(x, 30, z)
         }
     }
+
     static clamp(v, min, max) {
         return Math.min(Math.max(v, min), max);
     }

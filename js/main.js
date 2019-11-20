@@ -1,5 +1,4 @@
 import {
-    AmbientLight,
     BoxBufferGeometry,
     BufferGeometry,
     Clock,
@@ -10,6 +9,8 @@ import {
     Float32BufferAttribute,
     Fog,
     Geometry,
+    InstancedBufferAttribute,
+    InstancedBufferGeometry,
     LOD,
     Mesh,
     MeshBasicMaterial,
@@ -19,24 +20,21 @@ import {
     PerspectiveCamera,
     PlaneBufferGeometry,
     PlaneGeometry,
+    PointLightHelper,
     Points,
     PointsMaterial,
     Raycaster,
     RepeatWrapping,
     Scene,
-    SpotLight,
     Sprite,
     SpriteMaterial,
     Texture,
     TextureLoader,
     UVMapping,
     Vector3,
-    VertexColors,
-    RawShaderMaterial,
-    InstancedBufferGeometry,
-    WebGLRenderer,
-    InstancedBufferAttribute,
     Vector4,
+    VertexColors,
+    WebGLRenderer,
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -49,9 +47,8 @@ import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MousePitchController from "./controls/MousePitchController.js";
 import paperplane_vertex from './materials/Paperplanes.js';
 import paperplane_fragment from './materials/Paperplanes.js';
-import { GUI } from './lib/dat.gui.module.js';
+import Paperplanes from './materials/Paperplanes.js';
 import {GLTFLoader} from './loaders/GLTFLoader.js';
-import Paperplanes from "./materials/Paperplanes.js";
 
 
 export const GRAVITY = -0.005;
@@ -62,7 +59,7 @@ export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
 export const ROCK_AMOUNT = 50;
 export const TREE_AMOUNT = 50;
-export const FOG_ENABLE = true;
+export const FOG_ENABLE = false;
 export const FOG_START = 100;
 export const FOG_END = 500;
 
@@ -106,20 +103,26 @@ async function main(array, offset) {
     renderer.shadowMap.type = PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new AmbientLight(0xffaaaa, 0.2);
-    scene.add(ambientLight);
-
-    const pointLight = new DirectionalLight(0xffffff);
-    pointLight.position.y = 500;
-    pointLight.position.z = 200;
-    pointLight.position.z = -200;
+    const pointLight = new DirectionalLight(0xffffff, 3);
+    pointLight.position.y = 200;
+    pointLight.position.z = 400;
+    pointLight.position.z = 400;
     pointLight.castShadow = true;
 //Set up shadow properties for the light
     pointLight.shadow.mapSize.width = 1024;  // default
     pointLight.shadow.mapSize.height = 1024; // default
     pointLight.shadow.camera.near = 0.5;    // default
     pointLight.shadow.camera.far = 1000;     // default
+    let cameraSize = TERRAIN_SIZE / 2;
+    let cameraTopBot = cameraSize / 2
+    pointLight.shadow.camera.left = -cameraSize;
+    pointLight.shadow.camera.bottom = -cameraTopBot + 50;
+    pointLight.shadow.camera.right = cameraSize;
+    pointLight.shadow.camera.top = cameraTopBot + 30;
     scene.add(pointLight);
+    let helper = new PointLightHelper(pointLight, 5);
+
+    scene.add(helper);
 
     let physicsObjects = [];
 
@@ -131,18 +134,18 @@ async function main(array, offset) {
     physicsObjects.push(cube);
 
     scene.add(cube);
+    /*
+        const headLight = new SpotLight(0xffcccc, 1, 20, Math.PI / 4);
+        headLight.position.y = 2;
+        headLight.position.z = -2;
+        headLight.target.position.z = -20;
+        cube.add(headLight);
+        cube.add(headLight.target);
 
-    const headLight = new SpotLight(0xffcccc, 1, 20, Math.PI / 4);
-    headLight.position.y = 2;
-    headLight.position.z = -2;
-    headLight.target.position.z = -20;
-    cube.add(headLight);
-    cube.add(headLight.target);
+     */
     camera.position.y = 5;
     camera.position.z = 5;
     cube.add(camera);
-
-    pointLight.target = cube;
 
 
     /**
@@ -187,8 +190,6 @@ async function main(array, offset) {
         });
 
         const terrain = new Mesh(terrainGeometry, terrainMaterial);
-
-        terrain.castShadow = true;
         terrain.receiveShadow = true;
         terrain.name = "terrain";
         scene.add(terrain);
@@ -226,12 +227,15 @@ async function main(array, offset) {
                 treeSprite.scale.set(5, 7, 5);
                 treeSprite.position.y = 3;
                 treeLOD.addLevel(treeSprite, 250);
-                treeLOD.addLevel(gltf.scene.children[2], 0);
+                let birchTree = gltf.scene.children[2];
+                birchTree.traverse(function (child) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                });
+                treeLOD.addLevel(birchTree, 0);
 
                 for (let i = 0; i < TREE_AMOUNT; i++) {
                     let x = treeLOD.clone();
-                    x.castShadow = true;
-                    x.receiveShadow = true;
                     x.name = "birchTree" + i;
                     x.scale.set(3, 3, 3);
                     x.position.copy(Utilities.placeTree(raycaster, terrain));
@@ -255,11 +259,14 @@ async function main(array, offset) {
                 treeSprite2.scale.set(15, 15, 15);
                 treeSprite2.position.y = 10;
                 treeLOD2.addLevel(treeSprite2, 250);
+                let oakTree = gltf.scene.children[2];
+                oakTree.traverse(function (child) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                });
                 treeLOD2.addLevel(gltf.scene.children[2], 0);
                 for (let i = 0; i < TREE_AMOUNT; i++) {
                     let x = treeLOD2.clone();
-                    x.castShadow = true;
-                    x.receiveShadow = true;
                     x.name = "oakTree" + i;
                     x.position.copy(Utilities.placeTree(raycaster, terrain));
                     scene.add(x);
@@ -272,7 +279,6 @@ async function main(array, offset) {
             "resources/models/Rock.glb",
             (gltf) => {
                 let rock = gltf.scene.children[2];
-                console.log(rock);
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
                     x.castShadow = true;
@@ -291,7 +297,6 @@ async function main(array, offset) {
             "resources/models/Rock1.glb",
             (gltf) => {
                 let rock = gltf.scene.children[2];
-                console.log(rock);
                 for (let i = 0; i < ROCK_AMOUNT; i++) {
                     let x = rock.clone();
                     x.castShadow = true;
