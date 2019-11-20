@@ -45,7 +45,7 @@ export default class PhysicsEngine {
 
             //Clamping speed so our object doesn't move too fast
             p.speed.x = Utilities.clamp(p.speed.x + p.acceleration.x * deltaTime, -p.maxSpeed, p.maxSpeed);
-            p.speed.y = Utilities.clamp(p.speed.y + p.acceleration.y * deltaTime, 5, p.maxSpeed);
+            p.speed.y = Utilities.clamp(p.speed.y + p.acceleration.y * deltaTime, -p.maxSpeed, p.maxSpeed);
             p.speed.z = Utilities.clamp(p.speed.z + p.acceleration.z * deltaTime, -p.maxSpeed, p.maxSpeed);
 
 

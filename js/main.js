@@ -62,7 +62,8 @@ export const TREE_AMOUNT = 50;
 export const FOG_ENABLE = false;
 export const FOG_START = 100;
 export const FOG_END = 500;
-export const rainCount = 10000;
+export const RAIN_COUNT = 10000;
+export const SHADOWMAP_SIZE = 1024;
 
 let stats;
 let terrainGeometry;
@@ -108,8 +109,8 @@ async function main(array, offset) {
     pointLight.position.z = 400;
     pointLight.castShadow = true;
 //Set up shadow properties for the light
-    pointLight.shadow.mapSize.width = 1024;  // default
-    pointLight.shadow.mapSize.height = 1024; // default
+    pointLight.shadow.mapSize.width = SHADOWMAP_SIZE;  // default
+    pointLight.shadow.mapSize.height = SHADOWMAP_SIZE; // default
     pointLight.shadow.camera.near = 0.5;    // default
     pointLight.shadow.camera.far = 1000;     // default
     let cameraSize = TERRAIN_SIZE / 2;
@@ -460,7 +461,7 @@ async function main(array, offset) {
     //***********Rain*********
 
     let rainGeo = new Geometry();
-    for (let i = 0; i < rainCount; i++) {
+    for (let i = 0; i < RAIN_COUNT; i++) {
         let rainDrop = new Vector3(
             Math.random() * 400 - 200,
             Math.random() * 500 - 250,
