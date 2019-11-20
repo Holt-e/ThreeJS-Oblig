@@ -26,7 +26,6 @@ export default class PhysicsObject extends Mesh {
         this.maxAcceleration = maxAcceleration;
         this.running = running;
 
-
     }
 
 }

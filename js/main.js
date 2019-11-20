@@ -46,7 +46,7 @@ import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 
-export const GRAVITY = -0.016;
+export const GRAVITY = -0.005;
 export const RAYCAST_HEIGHT = 1000;
 export const GRASS_AMOUNT = 100;
 export const WATER_ANIMATION_ENABLE = true;
@@ -606,10 +606,10 @@ async function main(array, offset) {
         }
 
         if (move.jump) {
-            cube.acceleration.y += 0.001;
+            cube.acceleration.y = 0.0001;
         } else {
             cube.acceleration.y = 0;
-            cube.speed.y = cube.speed.y * SPEED_DECAY;
+            cube.speed.y *= SPEED_DECAY;
         }
 
         if (move.run) {

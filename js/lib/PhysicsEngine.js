@@ -30,8 +30,7 @@ export default class PhysicsEngine {
         this.physicsObjects.forEach((p) => {
             let groundHeight = this.getGroundHeight(p);
 
-
-            //If the inputs should be allowed to accelerate the object.
+            //TODO: If the inputs should be allowed to accelerate the object.
             /*
             if(this.touchingGround(p,groundHeight)) {
 
@@ -39,26 +38,30 @@ export default class PhysicsEngine {
                 p.acceleration.x = 0;
                 p.acceleration.z = 0;
             */
+
             if (p.acceleration.y === 0) {
                 p.acceleration.y = GRAVITY;
             }
 
-            /*
-                        p.acceleration.x = Utilities.clamp(p.acceleration.x, -p.maxAcceleration, p.maxAcceleration);
-                        p.acceleration.z = Utilities.clamp(p.acceleration.z, -p.maxAcceleration, p.maxAcceleration);
-            */
-
+            //Clamping speed so our object doesn't move too fast
             p.speed.x = Utilities.clamp(p.speed.x + p.acceleration.x * deltaTime, -p.maxSpeed, p.maxSpeed);
-            p.speed.y = Utilities.clamp(p.speed.y + p.acceleration.y * deltaTime, -10, p.maxSpeed);
+            p.speed.y = Utilities.clamp(p.speed.y + p.acceleration.y * deltaTime, 5, p.maxSpeed);
             p.speed.z = Utilities.clamp(p.speed.z + p.acceleration.z * deltaTime, -p.maxSpeed, p.maxSpeed);
 
 
-            //Translation step
+            //Translation of the object
             p.translateOnAxis(new Vector3(1, 0, 0), (p.speed.x * deltaTime + 0.5 * p.acceleration.x * Math.pow(deltaTime, 2)));
             p.translateOnAxis(new Vector3(0, 0, 1), (p.speed.z * deltaTime + 0.5 * p.acceleration.z * Math.pow(deltaTime, 2)));
 
-            p.position.y = p.position.y + (p.speed.y * deltaTime + 0.5 * p.acceleration.y * Math.pow(deltaTime, 2));
-            p.position.y = groundHeight + 1;
+            //Special case of gravity translation
+            p.position.y += p.speed.y * deltaTime + 0.5 * p.acceleration.y * Math.pow(deltaTime, 2);
+
+            if (p.position.y < groundHeight + 0.15) {
+                p.position.y = groundHeight + 0.15;
+            }
+
+
+
         })
     }
 }
