@@ -20,19 +20,18 @@ import {
     PerspectiveCamera,
     PlaneBufferGeometry,
     PlaneGeometry,
-    PointLightHelper,
     Points,
     PointsMaterial,
     Raycaster,
     RepeatWrapping,
     Scene,
+    ShaderMaterial,
     Sprite,
     SpriteMaterial,
     Texture,
     TextureLoader,
     UVMapping,
     Vector3,
-    ShaderMaterial,
     Vector4,
     VertexColors,
     WebGLRenderer,
@@ -63,9 +62,8 @@ export const TREE_AMOUNT = 50;
 export const FOG_ENABLE = false;
 export const FOG_START = 100;
 export const FOG_END = 500;
+export const rainCount = 10000;
 
-let rainDrop;
-let rainCount;
 let stats;
 let terrainGeometry;
 let physicsEngine;
@@ -121,10 +119,10 @@ async function main(array, offset) {
     pointLight.shadow.camera.right = cameraSize;
     pointLight.shadow.camera.top = cameraTopBot + 30;
     scene.add(pointLight);
-    let helper = new PointLightHelper(pointLight, 5);
+    /*let helper = new PointLightHelper(pointLight, 5);
 
     scene.add(helper);
-
+*/
     let physicsObjects = [];
 
     const geometry = new BoxBufferGeometry(1, 0.3, 1);
@@ -329,24 +327,29 @@ async function main(array, offset) {
 
     //*******Trails********//
 
-    let colorArray = [ new Color( 0xff0080 ), new Color( 0xffffff ), new Color( 0x8000ff ) ];
+    let colorArray = [new Color(0xff0080), new Color(0xffffff), new Color(0x8000ff)];
     let positionsTrails = [];
     let colorsTrails = [];
 
-    for ( let i = 0; i < 100; i ++ ) {
-        positionsTrails.push( Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5 );
-        let clr = colorArray[ Math.floor( Math.random() * colorArray.length ) ];
-        colorsTrails.push( clr.r, clr.g, clr.b );
+    for (let i = 0; i < 100; i++) {
+        positionsTrails.push(Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5);
+        let clr = colorArray[Math.floor(Math.random() * colorArray.length)];
+        colorsTrails.push(clr.r, clr.g, clr.b);
     }
 
     let geometrytrail = new BufferGeometry();
-    geometrytrail.setAttribute( 'position', new Float32BufferAttribute( positionsTrails, 3 ) );
-    geometrytrail.setAttribute( 'color', new Float32BufferAttribute( colorsTrails, 3 ) );
+    geometrytrail.setAttribute('position', new Float32BufferAttribute(positionsTrails, 3));
+    geometrytrail.setAttribute('color', new Float32BufferAttribute(colorsTrails, 3));
 
-    let materialtrail = new PointsMaterial( { size: 4, vertexColors: VertexColors, depthTest: false, sizeAttenuation: false } );
-    let mesh = new Points( geometrytrail, materialtrail );
+    let materialtrail = new PointsMaterial({
+        size: 4,
+        vertexColors: VertexColors,
+        depthTest: false,
+        sizeAttenuation: false
+    });
+    let mesh = new Points(geometrytrail, materialtrail);
 
-    scene.add( mesh );
+    scene.add(mesh);
 
     stats = new Stats();
 
@@ -381,13 +384,11 @@ async function main(array, offset) {
 //// WATER ////
 //Loading textures
 
-
     const waterGeometry = new PlaneGeometry(100, 100, 64, 64);
     let promises = [];
 
     for (let i = 1; i < 121; i++) {
         promises.push(Utilities.loadImage(`resources/textures/waterAnimated/${i.toString().padStart(4, '0')}.png`))
-
     }
 
     let waterDisplacementMap = await Promise.all(promises);
@@ -416,8 +417,6 @@ async function main(array, offset) {
     });
 
     let waterImageNumber = 0;
-    let waterFrameBool = 0;
-
 
     const water = new Mesh(waterGeometry, waterMaterial);
     water.scale.set(5, 5, 5);
@@ -429,56 +428,55 @@ async function main(array, offset) {
 
 //************Clouds**********
 
-            let cloudParticles = [];
-            let cloudLoader = new TextureLoader();
-            cloudLoader.load(
-                'resources/images/smoke1.png',
-                (texture) => {
+    let cloudParticles = [];
+    textureLoader.load(
+        'resources/images/smoke1.png',
+        (texture) => {
 
-                let cloudGeo = new PlaneBufferGeometry(1000,500);
-                let cloudMaterial = new MeshBasicMaterial({
-                    map: texture,
-                    transparent: true,
+            let cloudGeo = new PlaneBufferGeometry(1000, 500);
+            let cloudMaterial = new MeshBasicMaterial({
+                alphaTest: 0.1,
+                map: texture,
+                transparent: true,
 
 
-                });
-                for(let p=0; p<100; p++) {
-                    let cloud = new Mesh(cloudGeo,cloudMaterial);
-                    cloud.position.set(
-                        Math.random() *800 -400,
-                        500,
-                        Math.random() *400 - 450
-                    );
-                    cloud.rotation.x = 1.10;
-                    cloud.rotation.y = -0.10;
-                    cloud.rotation.z = Math.random() *360;
-                    cloud.material.opacity = 0.9;
-                    cloudParticles.push(cloud);
-                    scene.add(cloud);
-                }
             });
-
-        //***********Rain*********
-
-        let rainGeo = new Geometry();
-        for(let i= 0 ; i>rainCount; i++) {
-            rainDrop = new Vector3(
-                Math.random() * 400 - 200,
-                Math.random() * 500 - 250,
-                Math.random() * 400 - 200,
-            );
-            rainDrop.velocity = {};
-            rainDrop.velocity = 0;
-            rainGeo.vertices.push(rainDrop);
-        }
-
-        let rainMaterial = new PointsMaterial({
-            color: 0xaaaaaa,
-            size:0.1,
-            transparent: true
+            for (let p = 0; p < 10; p++) {
+                let cloud = new Mesh(cloudGeo, cloudMaterial);
+                cloud.position.set(
+                    Math.random() * 800 - 400,
+                    500,
+                    Math.random() * 400 - 450
+                );
+                cloud.rotation.x = 1.10;
+                cloud.rotation.y = -0.10;
+                cloud.rotation.z = Math.random() * 360;
+                cloud.material.opacity = 0.5;
+                cloudParticles.push(cloud);
+                scene.add(cloud);
+            }
         });
-        let rain = new Points(rainGeo,rainMaterial);
-        scene.add(rain);
+
+    //***********Rain*********
+
+    let rainGeo = new Geometry();
+    for (let i = 0; i < rainCount; i++) {
+        let rainDrop = new Vector3(
+            Math.random() * 400 - 200,
+            Math.random() * 500 - 250,
+            Math.random() * 400 - 200
+        );
+        rainDrop.velocity = {};
+        rainDrop.velocity = 0;
+        rainGeo.vertices.push(rainDrop);
+    }
+    let rainMaterial = new PointsMaterial({
+        color: 0xbbbbbb,
+        size: 0.2,
+        transparent: true
+    });
+    let rain = new Points(rainGeo, rainMaterial);
+    scene.add(rain);
 
 //// FOG ////
     if (FOG_ENABLE) {
@@ -495,45 +493,45 @@ async function main(array, offset) {
     let colorsPP = [];
     let orientationsStart = [];
     let orientationsEnd = [];
-    positionsPP.push( 0.025, - 0.025, 0 );
-    positionsPP.push( - 0.025, 0.025, 0 );
-    positionsPP.push( 0, 0, 0.025 );
+    positionsPP.push(0.025, -0.025, 0);
+    positionsPP.push(-0.025, 0.025, 0);
+    positionsPP.push(0, 0, 0.025);
     // instanced attributes
-    for ( let i = 0; i < instancesPP; i ++ ) {
+    for (let i = 0; i < instancesPP; i++) {
         // offsets
-        offsets.push( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 );
+        offsets.push(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
         // colors
-        colorsPP.push( Math.random(), Math.random(), Math.random(), Math.random() );
+        colorsPP.push(Math.random(), Math.random(), Math.random(), Math.random());
         // orientation start
-        vector.set( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
+        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
         vector.normalize();
-        orientationsStart.push( vector.x, vector.y, vector.z, vector.w );
+        orientationsStart.push(vector.x, vector.y, vector.z, vector.w);
         // orientation end
-        vector.set( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
+        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
         vector.normalize();
-        orientationsEnd.push( vector.x, vector.y, vector.z, vector.w );
+        orientationsEnd.push(vector.x, vector.y, vector.z, vector.w);
     }
     let PPgeometry = new InstancedBufferGeometry();
     PPgeometry.maxInstancedCount = instancesPP; // set so its initalized for dat.GUI, will be set in first draw otherwise
-    PPgeometry.setAttribute( 'position', new Float32BufferAttribute( positionsPP, 3 ) );
-    PPgeometry.setAttribute( 'offset', new InstancedBufferAttribute( new Float32Array( offsets ), 3 ) );
-    PPgeometry.setAttribute( 'color', new InstancedBufferAttribute( new Float32Array( colorsPP ), 4 ) );
-    PPgeometry.setAttribute( 'orientationStart', new InstancedBufferAttribute( new Float32Array( orientationsStart ), 4 ) );
-    PPgeometry.setAttribute( 'orientationEnd', new InstancedBufferAttribute( new Float32Array( orientationsEnd ), 4 ) );
+    PPgeometry.setAttribute('position', new Float32BufferAttribute(positionsPP, 3));
+    PPgeometry.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
+    PPgeometry.setAttribute('color', new InstancedBufferAttribute(new Float32Array(colorsPP), 4));
+    PPgeometry.setAttribute('orientationStart', new InstancedBufferAttribute(new Float32Array(orientationsStart), 4));
+    PPgeometry.setAttribute('orientationEnd', new InstancedBufferAttribute(new Float32Array(orientationsEnd), 4));
     // material
-    let PPmaterial = new Paperplanes( {
+    let PPmaterial = new Paperplanes({
         uniforms: {
-            "time": { value: 1.0 },
-            "sineTime": { value: 1.0 }
+            "time": {value: 1.0},
+            "sineTime": {value: 1.0}
         },
         vertexShader: paperplane_vertex,
         fragmentShader: paperplane_fragment,
         side: DoubleSide,
         transparent: true
-    } );
+    });
     //
-    let PPmesh = new Mesh( PPgeometry, PPmaterial );
-    scene.add( PPmesh );
+    let PPmesh = new Mesh(PPgeometry, PPmaterial);
+    scene.add(PPmesh);
     //
     stats = new Stats();
     //
@@ -543,14 +541,15 @@ async function main(array, offset) {
     gltfLoader.load(
         "resources/models/scene.gltf",
         (gltf) => {
-            let tree = gltf.scene.children[0];
+            let car = gltf.scene.children[0];
             //console.log(tree);
-            tree.scale.set(0.005, 0.005, 0.005);
-            tree.name = "car";
-            tree.rotation.z = Math.PI;
-            tree.castShadow = true;
-            tree.receiveShadow = true;
-            cube.add(tree);
+            car.scale.set(0.005, 0.005, 0.005);
+            car.name = "car";
+            car.rotation.z = Math.PI;
+            car.traverse(function (child) {
+                child.castShadow = true;
+            });
+            cube.add(car);
         },
     );
     /**
@@ -644,16 +643,12 @@ async function main(array, offset) {
 
         if (WATER_ANIMATION_ENABLE) {
 
-            waterFrameBool++;
-
             waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
             waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
-
 
             waterMaterial.displacementMap.needsUpdate = true;
 
             waterMaterial.normalMap.needsUpdate = true;
-
 
             waterImageNumber++;
             if (waterImageNumber > 119) {
@@ -709,20 +704,21 @@ async function main(array, offset) {
 
         //*********Cloud Animate**********
 
-                cloudParticles.forEach(p => {
-                    p.rotation.z -=0.002;
-                });
+        cloudParticles.forEach(p => {
+            p.rotation.z -= 0.002;
+        });
 
-                //********Rain Animate*********
-        rainGeo.vertices.forEach(p=> {
+        //********Rain Animate*********
+        rainGeo.vertices.forEach(p => {
             p.velocity -= 0.1 + Math.random() * 0.1;
             p.y += p.velocity;
-            if (p.y < -200) {
-                p.y = 200;
+            if (p.y < 1) {
+                p.y = 400;
                 p.velocity = 0;
             }
         });
         rainGeo.verticesNeedUpdate = true;
+        rain.rotation.y += 0.002;
 
 
         // render scene:
