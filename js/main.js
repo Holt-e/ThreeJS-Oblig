@@ -1,36 +1,37 @@
 import {
     AmbientLight,
     BoxBufferGeometry,
+    BufferGeometry,
     Clock,
+    Color,
     CubeTextureLoader,
     DirectionalLight,
     DoubleSide,
+    Float32BufferAttribute,
     Fog,
+    Geometry,
+    LOD,
     Mesh,
+    MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
     PCFSoftShadowMap,
     PerspectiveCamera,
+    PlaneBufferGeometry,
     PlaneGeometry,
+    Points,
+    PointsMaterial,
     Raycaster,
     RepeatWrapping,
     Scene,
     SpotLight,
     Sprite,
     SpriteMaterial,
-    BufferGeometry,
-    VertexColors,
     Texture,
     TextureLoader,
-    PlaneBufferGeometry,
     UVMapping,
-    Float32BufferAttribute,
-    MeshBasicMaterial,
-    Points,
-    Color,
     Vector3,
-    Geometry,
-    PointsMaterial,
+    VertexColors,
     WebGLRenderer
 } from './lib/three.module.js';
 
@@ -65,6 +66,7 @@ let physicsEngine;
 
 async function main(array, offset) {
     const gltfLoader = new GLTFLoader();
+    const textureLoader = new TextureLoader();
     const scene = new Scene();
 
     const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -201,16 +203,56 @@ async function main(array, offset) {
         }
         //// Loading in trees ////
         gltfLoader.load(
-            "resources/models/fir.glb",
+            "resources/models/beechTree.glb",
             (gltf) => {
-                let firTree = gltf.scene.children[2];
+                let treeLOD = new LOD();
+                let treeSpriteMap = textureLoader.load("resources/textures/birchTreeLOD.png");
+                let treeSpriteMaterial = new SpriteMaterial({
+                    alphaTest: 0.5,
+                    map: treeSpriteMap,
+                    side: DoubleSide,
+                    transparent: true,
+                });
+
+                let treeSprite = new Sprite(treeSpriteMaterial);
+                treeSprite.scale.set(5, 7, 5);
+                treeSprite.position.y = 3;
+                treeLOD.addLevel(treeSprite, 250);
+                treeLOD.addLevel(gltf.scene.children[2], 0);
+
                 for (let i = 0; i < TREE_AMOUNT; i++) {
-                    let x = firTree.clone();
+                    let x = treeLOD.clone();
                     x.castShadow = true;
                     x.receiveShadow = true;
-                    x.name = "firTree" + i;
-                    x.rotation.z = Math.PI;
-                    x.scale.set(1, 1, 1);
+                    x.name = "birchTree" + i;
+                    x.scale.set(3, 3, 3);
+                    x.position.copy(Utilities.placeTree(raycaster, terrain));
+                    scene.add(x);
+                }
+
+            },
+        );
+        gltfLoader.load(
+            "resources/models/oakTree.glb",
+            (gltf) => {
+                let treeLOD2 = new LOD();
+                let treeSpriteMap2 = textureLoader.load("resources/textures/birchTreeLOD.png");
+                let treeSpriteMaterial2 = new SpriteMaterial({
+                    alphaTest: 0.5,
+                    map: treeSpriteMap2,
+                    side: DoubleSide,
+                    transparent: true,
+                });
+                let treeSprite2 = new Sprite(treeSpriteMaterial2);
+                treeSprite2.scale.set(15, 15, 15);
+                treeSprite2.position.y = 10;
+                treeLOD2.addLevel(treeSprite2, 250);
+                treeLOD2.addLevel(gltf.scene.children[2], 0);
+                for (let i = 0; i < TREE_AMOUNT; i++) {
+                    let x = treeLOD2.clone();
+                    x.castShadow = true;
+                    x.receiveShadow = true;
+                    x.name = "oakTree" + i;
                     x.position.copy(Utilities.placeTree(raycaster, terrain));
                     scene.add(x);
                 }
@@ -287,10 +329,10 @@ async function main(array, offset) {
     let raycaster = new Raycaster(new Vector3(0, 50, 0), new Vector3(0, -1, 0));
 
     const gressMaterial = [];
-    let textureLoader = new TextureLoader();
     for (let i = 0; i < 3; i++) {
         let gressSprite = textureLoader.load(`resources/textures/grassSprite${i.toString()}.png`);
         gressMaterial.push(new SpriteMaterial({
+            alphaTest: 0.5,
             map: gressSprite,
             side: DoubleSide,
             transparent: true,
@@ -315,8 +357,6 @@ async function main(array, offset) {
 
 
     const waterGeometry = new PlaneGeometry(100, 100, 64, 64);
-
-
     let promises = [];
 
     for (let i = 1; i < 121; i++) {
@@ -337,7 +377,7 @@ async function main(array, offset) {
     let waterMaterial = new MeshStandardMaterial({
         transparent: true,
         opacity: 0.6,
-        color: 0x7399c9,
+        color: 0x31728a,
         metalness: 0.3,
         refractionRatio: 0.75,
 

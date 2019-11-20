@@ -72,7 +72,11 @@ export default class Utilities {
         raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
         let intersect = raycaster.intersectObject(terrain, true);
         if (intersect.length > 0) {
-            return new Vector3(x, intersect[0].point.y + 0.5, z)
+            if (intersect[0].point.y < 25) {
+                return this.placeRock(raycaster, terrain)
+            } else {
+                return new Vector3(x, intersect[0].point.y + 3, z)
+            }
         } else {
             return new Vector3(x, 30, z)
         }
@@ -85,7 +89,11 @@ export default class Utilities {
         raycaster.set(new Vector3(x, RAYCAST_HEIGHT, z), new Vector3(0, -1, 0));
         let intersect = raycaster.intersectObject(terrain, true);
         if (intersect.length > 0) {
-            return new Vector3(x, 70 + intersect[0].point.y + 0.5, z)
+            if (intersect[0].point.y < 17 || intersect[0].point.y > 60) {
+                return this.placeTree(raycaster, terrain)
+            } else {
+                return new Vector3(x, intersect[0].point.y, z)
+            }
         } else {
             return new Vector3(x, 30, z)
         }
