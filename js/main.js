@@ -47,12 +47,13 @@ import {GLTFLoader} from './loaders/GLTFLoader.js';
 
 export const GRAVITY = -0.005;
 export const RAYCAST_HEIGHT = 500;
-export const GRASS_AMOUNT = 100;
+export const GRASS_AMOUNT = 500;
 export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
-export const ROCK_AMOUNT = 25;
-export const TREE_AMOUNT = 25;
+export const CLOUD_COUNT = 100;
+export const ROCK_AMOUNT = 50;
+export const TREE_AMOUNT = 50;
 export const FOG_ENABLE = true;
 export const FOG_START = 100;
 export const FOG_END = 500;
@@ -470,7 +471,7 @@ async function main(array, offset) {
 
 
             });
-            for (let p = 0; p < 50; p++) {
+            for (let p = 0; p < CLOUD_COUNT; p++) {
                 let cloud = new Mesh(cloudGeo, cloudMaterial);
                 cloud.position.set(
                     Math.random() * 800 - 400,
