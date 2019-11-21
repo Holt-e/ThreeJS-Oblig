@@ -9,7 +9,11 @@ export default class GrassShader extends ShaderMaterial {
      * @param {Array<Texture>} textures
      */
     constructor({
-                    map = null
+                    color = 0xffffff,
+                    emissive = 0x000000,
+                    specular = 0x111111,
+                    shininess = 30,
+                    textures = null,
                 }) {
 
         const uniforms = UniformsUtils.merge([
@@ -154,12 +158,22 @@ void main() {
   gl_FragColor = col;
 }
         `;
+        /** END*/
+
+            // generate customised shaders. i. e. replace or append code to an existing shader program.
+
+        const vertexShader = ShaderCustomiser.customise(ShaderLib.phong.vertexShader, {
+                uv_pars_vertex: vertex_grass_shader,
+            });
+
+        const fragmentShader = ShaderCustomiser.customise(ShaderLib.phong.fragmentShader, {
+            uv_pars_fragment: fragment_shader_grass,
+        });
 
         super({
                   vertexShader,
                   fragmentShader,
                   uniforms,
-                  defines,
                   fog: true, // enable fog for this material
                   lights: true // enable lights for this material
               });

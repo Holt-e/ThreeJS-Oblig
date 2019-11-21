@@ -6,6 +6,7 @@ import {
     CubeTextureLoader,
     DirectionalLight,
     DoubleSide,
+    BufferAttribute,
     Float32BufferAttribute,
     Fog,
     Geometry,
@@ -35,6 +36,7 @@ import {
     Vector3,
     Vector4,
     Shape,
+    LineSegments,
     VertexColors,
     WebGLRenderer,
     ExtrudeBufferGeometry,
@@ -167,33 +169,15 @@ async function main(array, offset) {
             "time": { value: 1.0 }
         };
 
-    //*********Settings for ExtrudeBufferGeometry
-    let extrudeShape = new Shape();
-    extrudeShape.moveTo( 0,0 );
-    extrudeShape.lineTo( 0, 6 );
-    extrudeShape.lineTo( 10, 6 );
-    extrudeShape.lineTo( 10, 0 );
-    extrudeShape.lineTo( 0, 0 );
-
-    let extrudeBufferSettings = {
-        steps: 2,
-        depth: 16,
-        bevelEnabled: true,
-        bevelThickness: 3,
-        bevelSize: 3,
-        bevelOffset: 0,
-        bevelSegments: 3
-    };
-
     //**********Shader Materials Cube***********
 
     let shader1material = new ShaderMaterial({
         uniforms: customUniforms,
-        vertexShader: document.getElementById('vertexShader2').textContent,
-        fragmentShader: document.getElementById('fragmentShader2').textContent
+        vertexShader: document.getElementById('vertexShader1').textContent,
+        fragmentShader: document.getElementById('fragmentShader1').textContent
     });
 
-    let cubeGeometry = new ExtrudeBufferGeometry(extrudeShape, extrudeBufferSettings);
+    let cubeGeometry = new BoxBufferGeometry(8, 8,8,1,1);
     let cubemesh = new Mesh(cubeGeometry, shader1material);
     cubemesh.position.z = 130;
     cubemesh.position.x = 50;
@@ -209,13 +193,12 @@ async function main(array, offset) {
         vertexShader: document.getElementById('vertexShader2').textContent,
         fragmentShader: document.getElementById('fragmentShader2').textContent
     });
-    var Cube2geometry = new BoxBufferGeometry( 8, 8, 8,8,8 );
+    var Cube2geometry = new BoxBufferGeometry( 8, 8, 8,1,1 );
     var Cube2mesh = new Mesh( Cube2geometry, shader2material );
     Cube2mesh.position.x = 50;
     Cube2mesh.position.y = 120;
     Cube2mesh.position.z = 100;
     scene.add( Cube2mesh );
-
 
 
 //// Terrain ////
@@ -381,25 +364,27 @@ async function main(array, offset) {
     let colorsTrails = [];
 
     for (let i = 0; i < 100; i++) {
-        positionsTrails.push(Math.random() - 0.5, Math.random() + 70, Math.random() + 0.5);
+        positionsTrails.push(Utilities.getRnd(-10,10) - 0.5, Utilities.getRnd(-10,10) - 0.5, Utilities.getRnd(-10,10) - 0.5);
         let clr = colorArray[Math.floor(Math.random() * colorArray.length)];
         colorsTrails.push(clr.r, clr.g, clr.b);
     }
 
     let geometrytrail = new BufferGeometry();
-    geometrytrail.setAttribute('position', new Float32BufferAttribute(positionsTrails, 3));
+    geometrytrail.setAttribute('position', new Float32BufferAttribute(positionsTrails, 3,));
     geometrytrail.setAttribute('color', new Float32BufferAttribute(colorsTrails, 3));
 
     let materialtrail = new PointsMaterial({
-        size: 4,
+        size: 8,
         vertexColors: VertexColors,
-        depthTest: false,
+        depthTest: true,
         sizeAttenuation: false
     });
-    let mesh = new Points(geometrytrail, materialtrail);
+    let trailmesh = new Points(geometrytrail, materialtrail);
 
-    scene.add(mesh);
-
+    scene.add(trailmesh);
+    trailmesh.position.x =70;
+    trailmesh.position.y =110;
+    trailmesh.position.z =80;
     stats = new Stats();
 
 //// Gress Sprites ////
@@ -532,58 +517,6 @@ async function main(array, offset) {
         const color = 0x6c7c8a;
         scene.fog = new Fog(color, FOG_START, FOG_END);
     }
-
-    //*****Paperplane Shader******
-    // geometry
-    let vector = new Vector4();
-    let instancesPP = 50000;
-    let positionsPP = [];
-    let offsets = [];
-    let colorsPP = [];
-    let orientationsStart = [];
-    let orientationsEnd = [];
-    positionsPP.push(0.025, -0.025, 0);
-    positionsPP.push(-0.025, 0.025, 0);
-    positionsPP.push(0, 0, 0.025);
-    // instanced attributes
-    for (let i = 0; i < instancesPP; i++) {
-        // offsets
-        offsets.push(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-        // colors
-        colorsPP.push(Math.random(), Math.random(), Math.random(), Math.random());
-        // orientation start
-        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
-        vector.normalize();
-        orientationsStart.push(vector.x, vector.y, vector.z, vector.w);
-        // orientation end
-        vector.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
-        vector.normalize();
-        orientationsEnd.push(vector.x, vector.y, vector.z, vector.w);
-    }
-    let PPgeometry = new InstancedBufferGeometry();
-    PPgeometry.maxInstancedCount = instancesPP; // set so its initalized for dat.GUI, will be set in first draw otherwise
-    PPgeometry.setAttribute('position', new Float32BufferAttribute(positionsPP, 3));
-    PPgeometry.setAttribute('offset', new InstancedBufferAttribute(new Float32Array(offsets), 3));
-    PPgeometry.setAttribute('color', new InstancedBufferAttribute(new Float32Array(colorsPP), 4));
-    PPgeometry.setAttribute('orientationStart', new InstancedBufferAttribute(new Float32Array(orientationsStart), 4));
-    PPgeometry.setAttribute('orientationEnd', new InstancedBufferAttribute(new Float32Array(orientationsEnd), 4));
-    // material
-    let PPmaterial = new Paperplanes({
-        uniforms: {
-            "time": {value: 1.0},
-            "sineTime": {value: 1.0}
-        },
-        vertexShader: paperplane_vertex,
-        fragmentShader: paperplane_fragment,
-        side: DoubleSide,
-        transparent: true
-    });
-    //
-    let PPmesh = new Mesh(PPgeometry, PPmaterial);
-    scene.add(PPmesh);
-    //
-    stats = new Stats();
-    //
 
     //// LOADING OBJECTS ////
 
@@ -770,11 +703,14 @@ async function main(array, offset) {
         rain.rotation.y += 0.002;
 
         //*******CubeInstance Animate
-
+        cubemesh.rotation.x  += 0.1;
+        cubemesh.rotation.y  += 0.1;
+        Cube2mesh.rotation.y += 0.1;
+        Cube2mesh.rotation.x += 0.1;
         customUniforms[ "time" ].value += delta * 5;
 
         // render scene:
-        mesh.rotation.y = Date.now() / 1000;
+        trailmesh.rotation.y += 0.05;
         renderer.render(scene, camera);
         requestAnimationFrame(loop);
 
