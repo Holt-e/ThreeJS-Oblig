@@ -3,21 +3,18 @@ import {
     BufferGeometry,
     Clock,
     Color,
+    CubeCamera,
     CubeTextureLoader,
     DirectionalLight,
     DoubleSide,
-    BufferAttribute,
     Float32BufferAttribute,
     Fog,
     Geometry,
-    InstancedBufferAttribute,
-    InstancedBufferGeometry,
     LOD,
     Mesh,
     MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
-    NearestFilter,
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneBufferGeometry,
@@ -34,12 +31,8 @@ import {
     TextureLoader,
     UVMapping,
     Vector3,
-    Vector4,
-    Shape,
-    LineSegments,
     VertexColors,
-    WebGLRenderer,
-    ExtrudeBufferGeometry,
+    WebGLRenderer
 } from './lib/three.module.js';
 
 import Utilities from './lib/Utilities.js';
@@ -50,25 +43,22 @@ import MouseYawController from './controls/MouseYawController.js';
 import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MousePitchController from "./controls/MousePitchController.js";
-import paperplane_vertex from './materials/Paperplanes.js';
-import paperplane_fragment from './materials/Paperplanes.js';
-import Paperplanes from './materials/Paperplanes.js';
 import {GLTFLoader} from './loaders/GLTFLoader.js';
 
-
 export const GRAVITY = -0.005;
-export const RAYCAST_HEIGHT = 1000;
+export const RAYCAST_HEIGHT = 500;
 export const GRASS_AMOUNT = 100;
 export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
-export const ROCK_AMOUNT = 50;
-export const TREE_AMOUNT = 50;
-export const FOG_ENABLE = false;
+export const ROCK_AMOUNT = 25;
+export const TREE_AMOUNT = 25;
+export const FOG_ENABLE = true;
 export const FOG_START = 100;
 export const FOG_END = 500;
 export const RAIN_COUNT = 10000;
 export const SHADOWMAP_SIZE = 1024;
+export const REFLECTIONMAP_SIZE = 256;
 
 let stats;
 let terrainGeometry;
@@ -108,6 +98,19 @@ async function main(array, offset) {
     renderer.shadowMap.type = PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
+    //// ENV MAP ////
+
+    const cubeTextureLoader = new CubeTextureLoader();
+    const environmentMap = cubeTextureLoader.load([
+        'resources/images/skybox/miramar_ft.png',
+        'resources/images/skybox/miramar_bk.png',
+        'resources/images/skybox/miramar_up.png',
+        'resources/images/skybox/miramar_dn.png',
+        'resources/images/skybox/miramar_rt.png',
+        'resources/images/skybox/miramar_lf.png',
+    ]);
+    scene.background = environmentMap;
+
     const pointLight = new DirectionalLight(0xffffff, 3);
     pointLight.position.y = 200;
     pointLight.position.z = 400;
@@ -119,7 +122,7 @@ async function main(array, offset) {
     pointLight.shadow.camera.near = 0.5;    // default
     pointLight.shadow.camera.far = 1000;     // default
     let cameraSize = TERRAIN_SIZE / 2;
-    let cameraTopBot = cameraSize / 2
+    let cameraTopBot = cameraSize / 2;
     pointLight.shadow.camera.left = -cameraSize;
     pointLight.shadow.camera.bottom = -cameraTopBot + 50;
     pointLight.shadow.camera.right = cameraSize;
@@ -166,24 +169,27 @@ async function main(array, offset) {
 
         //******Custom Uniform for shader2******
     const customUniforms = {
-            "time": { value: 1.0 }
+            "time": {value: 1.0}
         };
 
     //**********Shader Materials Cube***********
 
-    let shader1material = new ShaderMaterial({
-        uniforms: customUniforms,
-        vertexShader: document.getElementById('vertexShader1').textContent,
-        fragmentShader: document.getElementById('fragmentShader1').textContent
+    let mirrorCubeCamera = new CubeCamera(0.5, 500, REFLECTIONMAP_SIZE);
+    mirrorCubeCamera.position.y = 120;
+    mirrorCubeCamera.position.x = 50;
+    mirrorCubeCamera.position.z = 130;
+
+    let mirrorMaterial = new MeshBasicMaterial({
+        envMap: mirrorCubeCamera.renderTarget.texture
     });
 
-    let cubeGeometry = new BoxBufferGeometry(8, 8,8,1,1);
-    let cubemesh = new Mesh(cubeGeometry, shader1material);
-    cubemesh.position.z = 130;
-    cubemesh.position.x = 50;
-    cubemesh.position.y = 120;
-    scene.add(cubemesh);
-
+    scene.add(mirrorCubeCamera);
+    let cubeGeometry = new BoxBufferGeometry(8, 8, 8, 1, 1);
+    let mirrorCube = new Mesh(cubeGeometry, mirrorMaterial);
+    mirrorCube.position.z = 130;
+    mirrorCube.position.x = 50;
+    mirrorCube.position.y = 120;
+    scene.add(mirrorCube);
 
 
     //************Shader Materials************
@@ -193,12 +199,12 @@ async function main(array, offset) {
         vertexShader: document.getElementById('vertexShader2').textContent,
         fragmentShader: document.getElementById('fragmentShader2').textContent
     });
-    var Cube2geometry = new BoxBufferGeometry( 8, 8, 8,1,1 );
-    var Cube2mesh = new Mesh( Cube2geometry, shader2material );
+    var Cube2geometry = new BoxBufferGeometry(8, 8, 8, 1, 1);
+    var Cube2mesh = new Mesh(Cube2geometry, shader2material);
     Cube2mesh.position.x = 50;
     Cube2mesh.position.y = 120;
     Cube2mesh.position.z = 100;
-    scene.add( Cube2mesh );
+    scene.add(Cube2mesh);
 
 
 //// Terrain ////
@@ -364,7 +370,7 @@ async function main(array, offset) {
     let colorsTrails = [];
 
     for (let i = 0; i < 100; i++) {
-        positionsTrails.push(Utilities.getRnd(-10,10) - 0.5, Utilities.getRnd(-10,10) - 0.5, Utilities.getRnd(-10,10) - 0.5);
+        positionsTrails.push(Utilities.getRnd(-10, 10) - 0.5, Utilities.getRnd(-10, 10) - 0.5, Utilities.getRnd(-10, 10) - 0.5);
         let clr = colorArray[Math.floor(Math.random() * colorArray.length)];
         colorsTrails.push(clr.r, clr.g, clr.b);
     }
@@ -382,9 +388,9 @@ async function main(array, offset) {
     let trailmesh = new Points(geometrytrail, materialtrail);
 
     scene.add(trailmesh);
-    trailmesh.position.x =70;
-    trailmesh.position.y =110;
-    trailmesh.position.z =80;
+    trailmesh.position.x = 70;
+    trailmesh.position.y = 110;
+    trailmesh.position.z = 80;
     stats = new Stats();
 
 //// Gress Sprites ////
@@ -402,18 +408,6 @@ async function main(array, offset) {
         }));
     }
 
-//// ENV MAP ////
-
-    const cubeTextureLoader = new CubeTextureLoader();
-    const environmentMap = cubeTextureLoader.load([
-        'resources/images/skybox/miramar_ft.png',
-        'resources/images/skybox/miramar_bk.png',
-        'resources/images/skybox/miramar_up.png',
-        'resources/images/skybox/miramar_dn.png',
-        'resources/images/skybox/miramar_rt.png',
-        'resources/images/skybox/miramar_lf.png',
-    ]);
-    scene.background = environmentMap;
 
 //// WATER ////
 //Loading textures
@@ -435,6 +429,7 @@ async function main(array, offset) {
         oceanDisplacementMap[i].needsUpdate = true;
 
     }
+
     let waterMaterial = new MeshStandardMaterial({
         transparent: true,
         opacity: 0.6,
@@ -455,8 +450,8 @@ async function main(array, offset) {
     const water = new Mesh(waterGeometry, waterMaterial);
     water.scale.set(5, 5, 5);
     water.position.y = 15;
-    water.position.z = -160;
     water.position.x = -160;
+    water.position.z = -160;
     water.rotation.x = -Math.PI / 2;
     scene.add(water);
 
@@ -623,6 +618,10 @@ async function main(array, offset) {
 
     function loop(time) {
 
+        mirrorCube.visible = false;
+        mirrorCubeCamera.update(renderer, scene);
+        mirrorCube.visible = true;
+
         if (WATER_ANIMATION_ENABLE) {
 
             waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
@@ -703,11 +702,9 @@ async function main(array, offset) {
         rain.rotation.y += 0.002;
 
         //*******CubeInstance Animate
-        cubemesh.rotation.x  += 0.1;
-        cubemesh.rotation.y  += 0.1;
         Cube2mesh.rotation.y += 0.1;
         Cube2mesh.rotation.x += 0.1;
-        customUniforms[ "time" ].value += delta * 5;
+        customUniforms["time"].value += delta * 5;
 
         // render scene:
         trailmesh.rotation.y += 0.05;
