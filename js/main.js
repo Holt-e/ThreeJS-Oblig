@@ -470,7 +470,7 @@ async function main(array, offset) {
 
 
             });
-            for (let p = 0; p < 10; p++) {
+            for (let p = 0; p < 50; p++) {
                 let cloud = new Mesh(cloudGeo, cloudMaterial);
                 cloud.position.set(
                     Math.random() * 800 - 400,
