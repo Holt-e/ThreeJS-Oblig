@@ -1,3 +1,4 @@
+"use strict";
 import {
     BoxBufferGeometry,
     BufferGeometry,
@@ -5,7 +6,6 @@ import {
     Color,
     CubeCamera,
     CubeTextureLoader,
-    DirectionalLight,
     DoubleSide,
     Float32BufferAttribute,
     Fog,
@@ -42,6 +42,7 @@ import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
 import Water from './lib/Water.js';
 import Car from "./lib/Car.js";
+import Sunlight from "./lib/SunLight.js";
 
 export const GRAVITY = -0.0001;
 export const RAYCAST_HEIGHT = 500;
@@ -63,11 +64,11 @@ let stats;
 let terrainGeometry;
 let physicsEngine;
 
-async function main(array, offset) {
+async function main() {
     const gltfLoader = new GLTFLoader();
     const textureLoader = new TextureLoader();
+    const cubeTextureLoader = new CubeTextureLoader();
     const scene = new Scene();
-
     const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 
@@ -99,7 +100,6 @@ async function main(array, offset) {
 
     //// ENV MAP ////
 
-    const cubeTextureLoader = new CubeTextureLoader();
     const environmentMap = cubeTextureLoader.load([
         'resources/images/skybox/miramar_ft.png',
         'resources/images/skybox/miramar_bk.png',
@@ -110,27 +110,15 @@ async function main(array, offset) {
     ]);
     scene.background = environmentMap;
 
-    const pointLight = new DirectionalLight(0xffffff, 3);
-    pointLight.position.y = 200;
-    pointLight.position.z = 400;
-    pointLight.position.z = 400;
-    pointLight.castShadow = true;
-//Set up shadow properties for the light
-    pointLight.shadow.mapSize.width = SHADOWMAP_SIZE;  // default
-    pointLight.shadow.mapSize.height = SHADOWMAP_SIZE; // default
-    pointLight.shadow.camera.near = 0.5;    // default
-    pointLight.shadow.camera.far = 1000;     // default
-    let cameraSize = TERRAIN_SIZE / 2;
-    let cameraTopBot = cameraSize / 2;
-    pointLight.shadow.camera.left = -cameraSize;
-    pointLight.shadow.camera.bottom = -cameraTopBot + 50;
-    pointLight.shadow.camera.right = cameraSize;
-    pointLight.shadow.camera.top = cameraTopBot + 30;
-    scene.add(pointLight);
-    /*let helper = new PointLightHelper(pointLight, 5);
+    // Adding sunlight
+    const sunLight = new Sunlight();
+    scene.add(sunLight);
+
+    /*let helper = new PointLightHelper(sunLight, 5);
 
     scene.add(helper);
-*/
+    */
+
     let physicsObjects = [];
 
     const geometry = new BoxBufferGeometry(1, 0.3, 1);
@@ -154,22 +142,10 @@ async function main(array, offset) {
     camera.position.z = 5;
     cube.add(camera);
 
-
-    /**
-     * Add terrain:
-     *
-     * We have to wait for the image file to be loaded by the browser.
-     * We pass a callback function with the stuff we want to do once the image is loaded.
-     * There are many ways to handle asynchronous flow in your application.
-     * An alternative way to handle asynchronous functions is async/await
-     *  - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-     */
-
-
-        //******Custom Uniform for shader2******
+    //******Custom Uniform for shader2******
     const customUniforms = {
-            "time": {value: 1.0}
-        };
+        "time": {value: 1.0}
+    };
 
     //**********Shader Materials Cube***********
 
@@ -206,7 +182,7 @@ async function main(array, offset) {
     scene.add(Cube2mesh);
 
 
-//// Terrain ////
+//// Terrain //// This should be refactored
     Utilities.loadImage('resources/images/heightMap0.png').then((heightmapImage) => {
 
 
@@ -226,7 +202,6 @@ async function main(array, offset) {
         snowyRockTexture.wrapS = RepeatWrapping;
         snowyRockTexture.wrapT = RepeatWrapping;
         snowyRockTexture.repeat.set(100000 / TERRAIN_SIZE, 100000 / TERRAIN_SIZE);
-
 
         const splatMap = new TextureLoader().load('resources/images/splatMap.png');
 
@@ -360,7 +335,6 @@ async function main(array, offset) {
         );
 
     });
-
 
     //*******Trails********//
 

@@ -1,3 +1,4 @@
+"use strict";
 import {Mesh} from '../lib/three.module.js';
 
 export default class PhysicsObject extends Mesh {

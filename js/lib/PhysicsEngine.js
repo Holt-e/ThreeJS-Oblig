@@ -1,3 +1,4 @@
+"use strict";
 import Utilities from '../lib/Utilities.js';
 import {Vector3} from "./three.module.js";
 import {GRAVITY, RAYCAST_HEIGHT} from "../main.js";
@@ -59,7 +60,6 @@ export default class PhysicsEngine {
             if (p.position.y < groundHeight + 0.15) {
                 p.position.y = groundHeight + 0.15;
             }
-
 
 
         })

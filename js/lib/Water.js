@@ -1,3 +1,4 @@
+"use strict";
 import {Mesh, MeshStandardMaterial, PlaneGeometry, RepeatWrapping, Texture, UVMapping} from "./three.module.js";
 import Utilities from "./Utilities.js";
 import {WATER_ANIMATION_ENABLE} from "../main.js";

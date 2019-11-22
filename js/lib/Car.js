@@ -1,3 +1,4 @@
+"use strict";
 import {Object3D} from "./three.module.js";
 import {GLTFLoader} from "../loaders/GLTFLoader.js";
 
