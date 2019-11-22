@@ -43,6 +43,8 @@ import {GLTFLoader} from './loaders/GLTFLoader.js';
 import Water from './lib/Water.js';
 import Car from "./lib/Car.js";
 import Sunlight from "./lib/SunLight.js";
+import vertexShader2 from "./materials/CustomShader1.js";
+import fragmentShader2 from "./materials/CustomShader1.js";
 
 export const GRAVITY = -0.0001;
 export const RAYCAST_HEIGHT = 500;
@@ -51,12 +53,12 @@ export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
 export const CLOUD_COUNT = 100;
-export const ROCK_AMOUNT = 50;
-export const TREE_AMOUNT = 50;
+export const ROCK_AMOUNT = 10;
+export const TREE_AMOUNT = 10;
 export const FOG_ENABLE = true;
 export const FOG_START = 100;
 export const FOG_END = 500;
-export const RAIN_COUNT = 10000;
+export const RAIN_COUNT = 1000;
 export const SHADOWMAP_SIZE = 1024;
 export const REFLECTIONMAP_SIZE = 256;
 
@@ -171,11 +173,11 @@ async function main() {
 
     let shader2material = new ShaderMaterial({
         uniforms: customUniforms,
-        vertexShader: document.getElementById('vertexShader2').textContent,
-        fragmentShader: document.getElementById('fragmentShader2').textContent
+        vertexShader: document.getElementById("vertexShader2").textContent,
+        fragmentShader: document.getElementById("fragmentShader2").textContent,
     });
-    var Cube2geometry = new BoxBufferGeometry(8, 8, 8, 1, 1);
-    var Cube2mesh = new Mesh(Cube2geometry, shader2material);
+    let Cube2geometry = new BoxBufferGeometry(8, 8, 8, 1, 1);
+    let Cube2mesh = new Mesh(Cube2geometry, shader2material);
     Cube2mesh.position.x = 50;
     Cube2mesh.position.y = 120;
     Cube2mesh.position.z = 100;
@@ -413,7 +415,7 @@ async function main() {
                 cloud.rotation.x = 1.10;
                 cloud.rotation.y = -0.10;
                 cloud.rotation.z = Math.random() * 360;
-                cloud.material.opacity = 0.5;
+                cloud.material.opacity = 0.6;
                 cloudParticles.push(cloud);
                 scene.add(cloud);
             }

@@ -6,7 +6,7 @@ import {
 } from "../lib/three.module.js";
 
 /**
- * Materiale som "pulserer", rød er sterkest farge
+ * Shader som får et Materiale som "pulserer" med rød som sterkest farge
  */
 export default class SunMaterial extends ShaderMaterial {
 
