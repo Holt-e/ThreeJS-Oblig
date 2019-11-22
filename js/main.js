@@ -43,8 +43,6 @@ import {GLTFLoader} from './loaders/GLTFLoader.js';
 import Water from './lib/Water.js';
 import Car from "./lib/Car.js";
 import Sunlight from "./lib/SunLight.js";
-import vertexShader2 from "./materials/CustomShader1.js";
-import fragmentShader2 from "./materials/CustomShader1.js";
 
 export const GRAVITY = -0.0001;
 export const RAYCAST_HEIGHT = 500;
@@ -53,13 +51,13 @@ export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
 export const CLOUD_COUNT = 100;
-export const ROCK_AMOUNT = 10;
-export const TREE_AMOUNT = 10;
+export const ROCK_AMOUNT = 25;
+export const TREE_AMOUNT = 25;
 export const FOG_ENABLE = true;
 export const FOG_START = 100;
 export const FOG_END = 500;
-export const RAIN_COUNT = 1000;
-export const SHADOWMAP_SIZE = 1024;
+export const RAIN_COUNT = 10000;
+export const SHADOWMAP_SIZE = 512;
 export const REFLECTIONMAP_SIZE = 256;
 
 let stats;
