@@ -14,11 +14,9 @@ import {
     Mesh,
     MeshBasicMaterial,
     MeshPhongMaterial,
-    MeshStandardMaterial,
     PCFSoftShadowMap,
     PerspectiveCamera,
     PlaneBufferGeometry,
-    PlaneGeometry,
     Points,
     PointsMaterial,
     Raycaster,
@@ -27,9 +25,7 @@ import {
     ShaderMaterial,
     Sprite,
     SpriteMaterial,
-    Texture,
     TextureLoader,
-    UVMapping,
     Vector3,
     VertexColors,
     WebGLRenderer
@@ -44,10 +40,12 @@ import TextureSplattingMaterial from './materials/TextureSplattingMaterial.js';
 import TerrainBufferGeometry from './terrain/TerrainBufferGeometry.js';
 import MousePitchController from "./controls/MousePitchController.js";
 import {GLTFLoader} from './loaders/GLTFLoader.js';
+import Water from './lib/Water.js';
+import Car from "./lib/Car.js";
 
-export const GRAVITY = -0.005;
+export const GRAVITY = -0.0001;
 export const RAYCAST_HEIGHT = 500;
-export const GRASS_AMOUNT = 500;
+export const GRASS_AMOUNT = 100;
 export const WATER_ANIMATION_ENABLE = true;
 export const SPEED_DECAY = 0.6;
 export const TERRAIN_SIZE = 1000;
@@ -411,49 +409,9 @@ async function main(array, offset) {
 
 
 //// WATER ////
-//Loading textures
 
-    const waterGeometry = new PlaneGeometry(100, 100, 64, 64);
-    let promises = [];
-
-    for (let i = 1; i < 121; i++) {
-        promises.push(Utilities.loadImage(`resources/textures/waterAnimated/${i.toString().padStart(4, '0')}.png`))
-    }
-
-    let waterDisplacementMap = await Promise.all(promises);
-
-    let oceanDisplacementMap = [];
-
-    for (let i = 0; i < 120; i++) {
-        oceanDisplacementMap.push(new Texture(waterDisplacementMap[i], UVMapping, RepeatWrapping, RepeatWrapping));
-        oceanDisplacementMap[i].repeat.set(2, 2);
-        oceanDisplacementMap[i].needsUpdate = true;
-
-    }
-
-    let waterMaterial = new MeshStandardMaterial({
-        transparent: true,
-        opacity: 0.6,
-        color: 0x31728a,
-        metalness: 0.3,
-        refractionRatio: 0.75,
-
-        roughness: 0.1,
-        envMapIntensity: 1,
-        displacementMap: oceanDisplacementMap[0],
-        displacementScale: 1,
-        normalMap: oceanDisplacementMap[0],
-        envMap: environmentMap
-    });
-
-    let waterImageNumber = 0;
-
-    const water = new Mesh(waterGeometry, waterMaterial);
-    water.scale.set(5, 5, 5);
-    water.position.y = 15;
-    water.position.x = -160;
-    water.position.z = -160;
-    water.rotation.x = -Math.PI / 2;
+    let water = new Water(environmentMap);
+    await water.loadAssets();
     scene.add(water);
 
 //************Clouds**********
@@ -487,7 +445,7 @@ async function main(array, offset) {
             }
         });
 
-    //***********Rain*********
+    //***********Rain*********//
 
     let rainGeo = new Geometry();
     for (let i = 0; i < RAIN_COUNT; i++) {
@@ -509,6 +467,7 @@ async function main(array, offset) {
     scene.add(rain);
 
 //// FOG ////
+
     if (FOG_ENABLE) {
         const color = 0x6c7c8a;
         scene.fog = new Fog(color, FOG_START, FOG_END);
@@ -516,20 +475,10 @@ async function main(array, offset) {
 
     //// LOADING OBJECTS ////
 
-    gltfLoader.load(
-        "resources/models/scene.gltf",
-        (gltf) => {
-            let car = gltf.scene.children[0];
-            //console.log(tree);
-            car.scale.set(0.005, 0.005, 0.005);
-            car.name = "car";
-            car.rotation.z = Math.PI;
-            car.traverse(function (child) {
-                child.castShadow = true;
-            });
-            cube.add(car);
-        },
-    );
+    let car = new Car();
+    await car.loadAssets();
+    cube.add(car);
+
     /**
      * Set up camera and cube controller:
      */
@@ -623,21 +572,7 @@ async function main(array, offset) {
         mirrorCubeCamera.update(renderer, scene);
         mirrorCube.visible = true;
 
-        if (WATER_ANIMATION_ENABLE) {
-
-            waterMaterial.displacementMap = oceanDisplacementMap[waterImageNumber];
-            waterMaterial.normalMap = oceanDisplacementMap[waterImageNumber];
-
-            waterMaterial.displacementMap.needsUpdate = true;
-
-            waterMaterial.normalMap.needsUpdate = true;
-
-            waterImageNumber++;
-            if (waterImageNumber > 119) {
-                waterImageNumber = 0;
-            }
-        }
-
+        water.update();
 
         const delta = clock.getDelta();
 
@@ -649,7 +584,6 @@ async function main(array, offset) {
             cube.acceleration.x = 0;
             cube.speed.x = cube.speed.x * SPEED_DECAY;
         }
-
         if (move.forward) {
             cube.acceleration.z += -0.0001;
         } else if (move.backward) {
@@ -666,12 +600,6 @@ async function main(array, offset) {
             cube.speed.y *= SPEED_DECAY;
         }
 
-        if (move.run) {
-            cube.running = true;
-        } else {
-            cube.running = false;
-        }
-
         // update controller rotation.
         mouseYawController.update(yaw);
         mousePitchController.update(pitch);
@@ -681,7 +609,7 @@ async function main(array, offset) {
 
         //// Physics Engine ////
         physicsEngine.update(delta * 1000);
-//********Trails********//
+        //********Trails********//
         stats.update();
 
         //*********Cloud Animate**********
